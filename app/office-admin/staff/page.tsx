@@ -92,7 +92,7 @@ export default function StaffManagement() {
       <div className="flex flex-col gap-3 sm:flex-row sm:gap-4 sm:justify-between">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Search staff members..." className="pl-10 w-full sm:w-64" />
+          <Input type="text" placeholder="Search staff members..." className="pl-10 w-full sm:w-64" />
         </div>
 
         <Button className="gradient-primary text-white">

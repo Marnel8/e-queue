@@ -136,15 +136,22 @@ export default function SettingsPage() {
                   />
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Maintenance Mode</Label>
-                    <p className="text-sm text-gray-600">Temporarily disable system access for maintenance</p>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Maintenance Mode</Label>
+                      <p className="text-sm text-gray-600">Temporarily disable public access; staff and admins retain limited access.</p>
+                    </div>
+                    <Switch
+                      checked={settings.maintenanceMode}
+                      onCheckedChange={(checked) => handleSettingChange("maintenanceMode", checked)}
+                    />
                   </div>
-                  <Switch
-                    checked={settings.maintenanceMode}
-                    onCheckedChange={(checked) => handleSettingChange("maintenanceMode", checked)}
-                  />
+                  <div className="text-xs text-gray-600">
+                    - Queues are paused; no new tickets can be issued by customers.<br />
+                    - Staff can finish current customers; system admin access unaffected.<br />
+                    - Public pages show a maintenance banner.
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-between">

@@ -37,7 +37,7 @@ export function AdminLayout({ children, title, description }: AdminLayoutProps) 
           <div className="flex items-center gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input placeholder="Search..." className="pl-10 w-64" />
+              <Input type="text" placeholder="Search..." className="pl-10 w-64" />
             </div>
 
             <Button variant="ghost" size="sm" className="relative">
