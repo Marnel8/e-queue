@@ -1,0 +1,320 @@
+"use client"
+
+import { useState } from "react"
+import { StaffLayout } from "@/components/staff/layout"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Progress } from "@/components/ui/progress"
+import {
+  Users,
+  Clock,
+  Play,
+  Pause,
+  SkipForward,
+  CheckCircle,
+  AlertCircle,
+  User,
+  Phone,
+  Mail,
+  Calendar,
+} from "lucide-react"
+
+const queueData = [
+  {
+    id: 1,
+    ticketNumber: "A001",
+    customerName: "Juan Dela Cruz",
+    service: "Transcript Request",
+    priority: "Regular",
+    waitTime: "5 minutes",
+    status: "Current",
+    phone: "+63 912 345 6789",
+    email: "juan.delacruz@student.omsc.edu.ph",
+    bookedTime: "9:00 AM",
+  },
+  {
+    id: 2,
+    ticketNumber: "A002",
+    customerName: "Maria Santos",
+    service: "Certificate Issuance",
+    priority: "Regular",
+    waitTime: "12 minutes",
+    status: "Waiting",
+    phone: "+63 923 456 7890",
+    email: "maria.santos@student.omsc.edu.ph",
+    bookedTime: "9:15 AM",
+  },
+  {
+    id: 3,
+    ticketNumber: "A003",
+    customerName: "Pedro Garcia",
+    service: "Enrollment",
+    priority: "Priority",
+    waitTime: "18 minutes",
+    status: "Waiting",
+    phone: "+63 934 567 8901",
+    email: "pedro.garcia@student.omsc.edu.ph",
+    bookedTime: "9:30 AM",
+  },
+  {
+    id: 4,
+    ticketNumber: "A004",
+    customerName: "Ana Rodriguez",
+    service: "Grade Verification",
+    priority: "Regular",
+    waitTime: "25 minutes",
+    status: "Waiting",
+    phone: "+63 945 678 9012",
+    email: "ana.rodriguez@student.omsc.edu.ph",
+    bookedTime: "9:45 AM",
+  },
+]
+
+const getStatusBadge = (status: string) => {
+  const variants = {
+    Current: "bg-green-100 text-green-800",
+    Waiting: "bg-blue-100 text-blue-800",
+    Hold: "bg-yellow-100 text-yellow-800",
+    Done: "bg-gray-100 text-gray-800",
+  }
+  return variants[status as keyof typeof variants] || "bg-gray-100 text-gray-800"
+}
+
+const getPriorityBadge = (priority: string) => {
+  return priority === "Priority" ? "bg-red-100 text-red-800" : "bg-gray-100 text-gray-800"
+}
+
+export default function StaffDashboard() {
+  const [currentQueue, setCurrentQueue] = useState(queueData[0])
+  const [queueList, setQueueList] = useState(queueData.slice(1))
+
+  const handleNext = () => {
+    if (queueList.length > 0) {
+      setCurrentQueue(queueList[0])
+      setQueueList(queueList.slice(1))
+    }
+  }
+
+  const handleHold = () => {
+    // Move current to end of queue with hold status
+    const heldCustomer = { ...currentQueue, status: "Hold" }
+    if (queueList.length > 0) {
+      setCurrentQueue(queueList[0])
+      setQueueList([...queueList.slice(1), heldCustomer])
+    }
+  }
+
+  const handleSkip = () => {
+    // Skip current customer
+    if (queueList.length > 0) {
+      setCurrentQueue(queueList[0])
+      setQueueList(queueList.slice(1))
+    }
+  }
+
+  const handleDone = () => {
+    // Mark as done and move to next
+    if (queueList.length > 0) {
+      setCurrentQueue(queueList[0])
+      setQueueList(queueList.slice(1))
+    }
+  }
+
+  return (
+    <StaffLayout title="Queue Dashboard" description="Manage your queue in real-time">
+      <div className="space-y-6">
+        {/* Queue Statistics */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">In Queue</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{queueList.length + 1}</div>
+              <p className="text-xs text-muted-foreground">Customers waiting</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Current Wait</CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">5m</div>
+              <p className="text-xs text-muted-foreground">Average wait time</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Served Today</CardTitle>
+              <CheckCircle className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">23</div>
+              <p className="text-xs text-muted-foreground">Customers served</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">My Performance</CardTitle>
+              <User className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">4.2m</div>
+              <p className="text-xs text-muted-foreground">Avg service time</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          {/* Current Customer */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Play className="w-5 h-5 text-green-600" />
+                Now Serving
+              </CardTitle>
+              <CardDescription>Current customer being served</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {currentQueue ? (
+                <>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-white font-bold text-lg">{currentQueue.ticketNumber}</span>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-semibold text-lg truncate">{currentQueue.customerName}</h3>
+                        <p className="text-muted-foreground text-sm truncate">{currentQueue.service}</p>
+                      </div>
+                    </div>
+                    <div className="text-left sm:text-right flex-shrink-0">
+                      <Badge className={getPriorityBadge(currentQueue.priority)}>{currentQueue.priority}</Badge>
+                      <p className="text-sm text-muted-foreground mt-1">{currentQueue.bookedTime}</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Phone className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                      <span className="truncate">{currentQueue.phone}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Mail className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                      <span className="truncate">{currentQueue.email}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Calendar className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                      <span className="truncate">Booked for {currentQueue.bookedTime}</span>
+                    </div>
+                  </div>
+
+                  {/* Queue Controls */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4">
+                    <Button onClick={handleDone} className="gradient-primary text-white">
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Done
+                    </Button>
+                    <Button onClick={handleNext} variant="outline" className="bg-transparent">
+                      <Play className="w-4 h-4 mr-2" />
+                      Next
+                    </Button>
+                    <Button onClick={handleHold} variant="outline" className="bg-transparent">
+                      <Pause className="w-4 h-4 mr-2" />
+                      Hold
+                    </Button>
+                    <Button onClick={handleSkip} variant="outline" className="bg-transparent">
+                      <SkipForward className="w-4 h-4 mr-2" />
+                      Skip
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No customers in queue</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Queue List */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-blue-600" />
+                Waiting Queue
+              </CardTitle>
+              <CardDescription>Customers waiting to be served</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {queueList.length > 0 ? (
+                  queueList.map((customer, index) => (
+                    <div key={customer.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 border rounded-lg">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="w-8 h-8 bg-secondary rounded-full flex items-center justify-center flex-shrink-0">
+                          <span className="text-secondary-foreground font-medium text-sm">{customer.ticketNumber}</span>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium truncate">{customer.customerName}</p>
+                          <p className="text-sm text-muted-foreground truncate">{customer.service}</p>
+                        </div>
+                      </div>
+                      <div className="text-left sm:text-right flex-shrink-0">
+                        <Badge className={getStatusBadge(customer.status)}>{customer.status}</Badge>
+                        <p className="text-xs text-muted-foreground mt-1">{customer.waitTime}</p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8">
+                    <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No customers waiting</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Service Progress */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Today's Progress</CardTitle>
+            <CardDescription>Your service performance for today</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex justify-between text-sm">
+                <span>Daily Target: 30 customers</span>
+                <span className="text-green-600">23/30 (77%)</span>
+              </div>
+              <Progress value={77} className="h-3" />
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                <div>
+                  <p className="text-2xl font-bold text-green-600">23</p>
+                  <p className="text-sm text-muted-foreground">Served</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-blue-600">4</p>
+                  <p className="text-sm text-muted-foreground">In Queue</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-primary">4.2m</p>
+                  <p className="text-sm text-muted-foreground">Avg Time</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </StaffLayout>
+  )
+}
