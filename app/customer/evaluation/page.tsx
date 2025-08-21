@@ -318,6 +318,80 @@ export default function ServiceEvaluationPage() {
 		);
 	}
 
+	// Only allow evaluation when linked to a completed transaction
+	if (!transactionInfo) {
+		return (
+			<CustomerLayout
+				title="Service Evaluation"
+				description="Evaluations are submitted after a completed service"
+			>
+				<div className="max-w-2xl mx-auto space-y-6">
+					<Card className="border-2 border-blue-200 bg-blue-50">
+						<CardHeader>
+							<CardTitle className="text-blue-900">
+								Evaluation Available After Transaction
+							</CardTitle>
+							<CardDescription className="text-blue-800">
+								Evaluation forms are only available right after a successful
+								queuing/transaction. Please scan the QR code shown by staff or
+								open the evaluation link provided at completion.
+							</CardDescription>
+						</CardHeader>
+						<CardContent className="space-y-3">
+							{hasPendingEvaluation ? (
+								<div className="p-3 rounded border border-yellow-300 bg-yellow-50 text-yellow-800">
+									You still have a pending evaluation from your last
+									transaction. Please use the QR code you received to complete
+									it before getting a new ticket.
+								</div>
+							) : (
+								<div className="text-sm text-blue-800">
+									No active transaction detected. You can submit general
+									feedback anytime from the Feedback page.
+								</div>
+							)}
+							<div className="flex gap-3">
+								<Button
+									onClick={() => (window.location.href = "/customer/feedback")}
+									variant="outline"
+									className="border-blue-300"
+								>
+									Go to Feedback
+								</Button>
+								<Button
+									onClick={() => (window.location.href = "/customer")}
+									className="gradient-primary text-white"
+								>
+									Back to Dashboard
+								</Button>
+							</div>
+						</CardContent>
+					</Card>
+
+					<Card className="border-2 border-gray-200">
+						<CardHeader>
+							<CardTitle className="text-[#071952]">
+								What’s the difference?
+							</CardTitle>
+							<CardDescription className="text-gray-700">
+								Feedback can be submitted anytime. Evaluations are required only
+								after a completed service.
+							</CardDescription>
+						</CardHeader>
+						<CardContent className="text-sm text-gray-700">
+							<ul className="list-disc pl-5 space-y-1">
+								<li>Use Feedback to share suggestions or issues anytime.</li>
+								<li>
+									Use Evaluation right after your transaction via the QR/link.
+								</li>
+							</ul>
+						</CardContent>
+					</Card>
+				</div>
+			</CustomerLayout>
+		);
+	}
+
 	return (
 		<CustomerLayout
 			title="Service Evaluation"

@@ -40,8 +40,13 @@ export default function LoginPage() {
 	const [lockoutTime, setLockoutTime] = useState<Date | null>(null);
 	const [showSecurityAlert, setShowSecurityAlert] = useState(false);
 
+	// Hydration handling
+	const [mounted, setMounted] = useState(false);
+
 	// Check for existing lockout on component mount
 	useEffect(() => {
+		setMounted(true);
+
 		if (typeof window !== "undefined") {
 			const storedAttempts = localStorage.getItem("login_attempts");
 			const storedLockout = localStorage.getItem("login_lockout");
@@ -161,55 +166,90 @@ export default function LoginPage() {
 		const remainingMinutes = getRemainingLockoutTime();
 
 		return (
-			<div className="min-h-screen bg-background flex items-center justify-center p-4">
+			<div
+				className="min-h-screen bg-background flex items-center justify-center p-4"
+				suppressHydrationWarning
+			>
 				<Card className="w-full max-w-md">
 					<CardHeader className="text-center">
-						<div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-							<Shield className="w-8 h-8 text-red-600" />
-						</div>
-						<CardTitle className="text-2xl text-red-600">
-							Account Temporarily Locked
-						</CardTitle>
-						<CardDescription>
-							Too many failed login attempts detected
-						</CardDescription>
+						{mounted ? (
+							<>
+								<div
+									key="lockout-icon"
+									className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4"
+								>
+									<Shield className="w-8 h-8 text-red-600" />
+								</div>
+								<CardTitle className="text-2xl text-red-600">
+									Account Temporarily Locked
+								</CardTitle>
+								<CardDescription>
+									Too many failed login attempts detected
+								</CardDescription>
+							</>
+						) : (
+							<>
+								<div className="w-16 h-16 bg-muted rounded-full animate-pulse mx-auto mb-4" />
+								<div className="h-8 w-48 bg-muted animate-pulse mx-auto mb-2" />
+								<div className="h-4 w-64 bg-muted animate-pulse mx-auto" />
+							</>
+						)}
 					</CardHeader>
 					<CardContent className="space-y-4">
-						<div className="text-center space-y-2">
-							<p className="text-sm text-muted-foreground">
-								Your account has been locked due to multiple failed login
-								attempts.
-							</p>
-							<p className="text-sm font-medium">
-								Time remaining:{" "}
-								<span className="text-red-600">{remainingMinutes} minutes</span>
-							</p>
-							<p className="text-xs text-muted-foreground">
-								This is a security measure to protect your account.
-							</p>
-						</div>
-
-						{showSecurityAlert && (
-							<div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-								<div className="flex items-center gap-2 text-yellow-800">
-									<AlertTriangle className="w-4 h-4" />
-									<span className="text-sm font-medium">Security Alert</span>
+						{mounted ? (
+							<>
+								<div className="text-center space-y-2">
+									<p className="text-sm text-muted-foreground">
+										Your account has been locked due to multiple failed login
+										attempts.
+									</p>
+									<p className="text-sm font-medium">
+										Time remaining:{" "}
+										<span className="text-red-600">
+											{remainingMinutes} minutes
+										</span>
+									</p>
+									<p className="text-xs text-muted-foreground">
+										This is a security measure to protect your account.
+									</p>
 								</div>
-								<p className="text-xs text-yellow-700 mt-1">
-									This incident has been logged for security review.
-								</p>
+
+								{showSecurityAlert && (
+									<div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+										<div className="flex items-center gap-2 text-yellow-800">
+											<AlertTriangle
+												key="security-alert-icon"
+												className="w-4 h-4"
+											/>
+											<span className="text-sm font-medium">
+												Security Alert
+											</span>
+										</div>
+										<p className="text-xs text-yellow-700 mt-1">
+											This incident has been logged for security review.
+										</p>
+									</div>
+								)}
+
+								<div className="text-center">
+									<Button
+										key="try-again-button"
+										onClick={() => window.location.reload()}
+										variant="outline"
+										disabled={remainingMinutes > 0}
+									>
+										Try Again
+									</Button>
+								</div>
+							</>
+						) : (
+							<div className="space-y-4">
+								<div className="h-4 w-full bg-muted animate-pulse" />
+								<div className="h-4 w-full bg-muted animate-pulse" />
+								<div className="h-4 w-full bg-muted animate-pulse" />
+								<div className="h-9 w-32 bg-muted animate-pulse mx-auto" />
 							</div>
 						)}
-
-						<div className="text-center">
-							<Button
-								onClick={() => window.location.reload()}
-								variant="outline"
-								disabled={remainingMinutes > 0}
-							>
-								Try Again
-							</Button>
-						</div>
 					</CardContent>
 				</Card>
 			</div>
@@ -217,156 +257,238 @@ export default function LoginPage() {
 	}
 
 	return (
-		<div className="min-h-screen bg-background flex items-center justify-center p-4">
+		<div
+			className="min-h-screen bg-background flex items-center justify-center p-4"
+			suppressHydrationWarning
+		>
 			<div className="w-full max-w-md space-y-6">
 				{/* Logo */}
 				<div className="text-center">
-					<Image
-						src="/images/logo.png"
-						alt="E-QUEUE Logo"
-						width={120}
-						height={120}
-						className="mx-auto mb-4"
-					/>
-					<h1 className="text-2xl font-bold text-[#071952]">Welcome Back</h1>
-					<p className="text-muted-foreground">
-						Sign in to your E-QUEUE account
-					</p>
+					{mounted ? (
+						<>
+							<Image
+								key="logo-image"
+								src="/images/logo.png"
+								alt="E-QUEUE Logo"
+								width={120}
+								height={120}
+								className="mx-auto mb-4"
+							/>
+							<h1 className="text-2xl font-bold text-[#071952]">
+								Welcome Back
+							</h1>
+							<p className="text-muted-foreground">
+								Sign in to your E-QUEUE account
+							</p>
+						</>
+					) : (
+						<>
+							<div className="w-30 h-30 bg-muted rounded-full animate-pulse mx-auto mb-4" />
+							<div className="h-8 w-48 bg-muted animate-pulse mx-auto mb-2" />
+							<div className="h-4 w-64 bg-muted animate-pulse mx-auto" />
+						</>
+					)}
 				</div>
 
 				{/* Login Form */}
-				<Card>
-					<CardContent className="p-6">
-						<form onSubmit={handleSubmit} className="space-y-4">
-							{/* Role Selection */}
-							<div className="space-y-2">
-								<Label htmlFor="role">Select Role</Label>
-								<Select value={userRole} onValueChange={setUserRole} required>
-									<SelectTrigger>
-										<SelectValue placeholder="Choose your role" />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="customer">Customer / Student</SelectItem>
-										<SelectItem value="staff">Office Staff</SelectItem>
-										<SelectItem value="office-admin">Office Admin</SelectItem>
-										<SelectItem value="system-admin">System Admin</SelectItem>
-									</SelectContent>
-								</Select>
-							</div>
+				{mounted ? (
+					<Card>
+						<CardContent className="p-6">
+							<form
+								onSubmit={handleSubmit}
+								className="space-y-4"
+								suppressHydrationWarning
+							>
+								{/* Role Selection */}
+								<div className="space-y-2">
+									<Label htmlFor="role">Select Role</Label>
+									{mounted ? (
+										<Select
+											key="role-select"
+											value={userRole}
+											onValueChange={setUserRole}
+											required
+										>
+											<SelectTrigger>
+												<SelectValue placeholder="Choose your role" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="customer">
+													Customer / Student
+												</SelectItem>
+												<SelectItem value="staff">Office Staff</SelectItem>
+												<SelectItem value="office-admin">
+													Office Admin
+												</SelectItem>
+												<SelectItem value="system-admin">
+													System Admin
+												</SelectItem>
+											</SelectContent>
+										</Select>
+									) : (
+										<div className="h-9 w-full rounded-md border bg-muted px-3 py-2 text-sm text-muted-foreground">
+											Choose your role
+										</div>
+									)}
+								</div>
 
-							{/* Email */}
-							<div className="space-y-2">
-								<Label htmlFor="email">Email Address</Label>
-								<Input
-									id="email"
-									type="email"
-									value={formData.email}
-									onChange={(e) =>
-										setFormData({ ...formData, email: e.target.value })
-									}
-									required
-									disabled={isLocked}
-								/>
-							</div>
-
-							{/* Password */}
-							<div className="space-y-2">
-								<Label htmlFor="password">Password</Label>
-								<div className="relative">
+								{/* Email */}
+								<div className="space-y-2">
+									<Label htmlFor="email">Email Address</Label>
 									<Input
-										id="password"
-										type={showPassword ? "text" : "password"}
-										value={formData.password}
+										id="email"
+										type="email"
+										value={formData.email}
 										onChange={(e) =>
-											setFormData({ ...formData, password: e.target.value })
+											setFormData({ ...formData, email: e.target.value })
 										}
 										required
 										disabled={isLocked}
 									/>
-									<Button
-										type="button"
-										variant="ghost"
-										size="sm"
-										className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-										onClick={() => setShowPassword(!showPassword)}
-										disabled={isLocked}
-									>
-										{showPassword ? (
-											<EyeOff className="h-4 w-4" />
-										) : (
-											<Eye className="h-4 w-4" />
+								</div>
+
+								{/* Password */}
+								<div className="space-y-2">
+									<Label htmlFor="password">Password</Label>
+									<div className="relative">
+										<Input
+											id="password"
+											type={mounted && showPassword ? "text" : "password"}
+											value={formData.password}
+											onChange={(e) =>
+												setFormData({ ...formData, password: e.target.value })
+											}
+											required
+											disabled={isLocked}
+										/>
+										{mounted && (
+											<Button
+												key="password-toggle-button"
+												type="button"
+												variant="ghost"
+												size="sm"
+												className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+												onClick={() => setShowPassword(!showPassword)}
+												disabled={isLocked}
+											>
+												{showPassword ? (
+													<EyeOff key="eye-off-icon" className="h-4 w-4" />
+												) : (
+													<Eye key="eye-icon" className="h-4 w-4" />
+												)}
+											</Button>
 										)}
-									</Button>
-								</div>
-							</div>
-
-							{/* Remember Me */}
-							<div className="flex items-center space-x-2">
-								<Checkbox
-									id="remember"
-									checked={formData.rememberMe}
-									onCheckedChange={(checked) =>
-										setFormData({ ...formData, rememberMe: checked as boolean })
-									}
-									disabled={isLocked}
-								/>
-								<Label htmlFor="remember" className="text-sm font-normal">
-									Remember me
-								</Label>
-							</div>
-
-							{/* Login Attempts Warning */}
-							{loginAttempts > 0 && (
-								<div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-									<div className="flex items-center gap-2 text-yellow-800">
-										<AlertTriangle className="w-4 h-4" />
-										<span className="text-sm font-medium">Login Attempts</span>
 									</div>
-									<p className="text-xs text-yellow-700 mt-1">
-										Failed attempts: {loginAttempts}/3. Account will be locked
-										after 3 failed attempts.
-									</p>
 								</div>
-							)}
 
-							{/* Submit Button */}
-							<Button
-								type="submit"
-								className="w-full gradient-primary text-white"
-								disabled={isLocked || !userRole}
-							>
-								Sign In
-							</Button>
-						</form>
-					</CardContent>
-				</Card>
+								{/* Remember Me */}
+								<div className="flex items-center space-x-2">
+									{mounted ? (
+										<Checkbox
+											key="remember-checkbox"
+											id="remember"
+											checked={formData.rememberMe}
+											onCheckedChange={(checked) =>
+												setFormData({
+													...formData,
+													rememberMe: checked as boolean,
+												})
+											}
+											disabled={isLocked}
+										/>
+									) : (
+										<div className="h-4 w-4 rounded border bg-muted" />
+									)}
+									<Label htmlFor="remember" className="text-sm font-normal">
+										Remember me
+									</Label>
+								</div>
+
+								{/* Login Attempts Warning */}
+								{loginAttempts > 0 && (
+									<div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+										<div className="flex items-center gap-2 text-yellow-800">
+											<AlertTriangle
+												key="login-attempts-icon"
+												className="w-4 h-4"
+											/>
+											<span className="text-sm font-medium">
+												Login Attempts
+											</span>
+										</div>
+										<p className="text-xs text-yellow-700 mt-1">
+											Failed attempts: {loginAttempts}/3. Account will be locked
+											after 3 failed attempts.
+										</p>
+									</div>
+								)}
+
+								{/* Submit Button */}
+								{mounted ? (
+									<Button
+										key="sign-in-button"
+										type="submit"
+										className="w-full gradient-primary text-white"
+										disabled={isLocked || !userRole}
+									>
+										Sign In
+									</Button>
+								) : (
+									<div className="h-9 w-full rounded-md bg-muted animate-pulse" />
+								)}
+							</form>
+						</CardContent>
+					</Card>
+				) : (
+					<Card>
+						<CardContent className="p-6">
+							<div className="space-y-4">
+								<div className="h-9 w-full rounded-md bg-muted animate-pulse" />
+								<div className="h-9 w-full rounded-md bg-muted animate-pulse" />
+								<div className="h-9 w-full rounded-md bg-muted animate-pulse" />
+								<div className="h-4 w-4 rounded border bg-muted animate-pulse" />
+								<div className="h-9 w-full rounded-md bg-muted animate-pulse" />
+							</div>
+						</CardContent>
+					</Card>
+				)}
 
 				{/* Links */}
-				<div className="text-center space-y-2">
-					<Link
-						href="/forgot-password"
-						className="text-sm text-primary hover:underline"
-					>
-						Forgot your password?
-					</Link>
-					<div className="text-sm text-muted-foreground">
-						Don't have an account?{" "}
-						<Link href="/register" className="text-primary hover:underline">
-							Sign up
-						</Link>
-					</div>
-				</div>
+				{mounted ? (
+					<>
+						<div className="text-center space-y-2">
+							<Link
+								href="/forgot-password"
+								className="text-sm text-primary hover:underline"
+							>
+								Forgot your password?
+							</Link>
+							<div className="text-sm text-muted-foreground">
+								Don't have an account?{" "}
+								<Link href="/register" className="text-primary hover:underline">
+									Sign up
+								</Link>
+							</div>
+						</div>
 
-				{/* Back to Home */}
-				<div className="text-center">
-					<Link
-						href="/"
-						className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-					>
-						<ArrowLeft className="w-4 h-4" />
-						Back to Home
-					</Link>
-				</div>
+						{/* Back to Home */}
+						<div className="text-center">
+							<Link
+								href="/"
+								className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+							>
+								<ArrowLeft key="back-arrow" className="w-4 h-4" />
+								Back to Home
+							</Link>
+						</div>
+					</>
+				) : (
+					<div className="space-y-4">
+						<div className="h-4 w-32 bg-muted animate-pulse mx-auto" />
+						<div className="h-4 w-48 bg-muted animate-pulse mx-auto" />
+						<div className="h-4 w-32 bg-muted animate-pulse mx-auto" />
+					</div>
+				)}
 			</div>
 		</div>
 	);

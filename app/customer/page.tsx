@@ -52,6 +52,7 @@ export default function CustomerDashboard() {
 	const [showEvaluationForm, setShowEvaluationForm] = useState(false);
 	const [transactionCompleted, setTransactionCompleted] = useState(false);
 	const [hasPendingEvaluation, setHasPendingEvaluation] = useState(false);
+	const [cancelReason, setCancelReason] = useState("");
 	const [evaluationData, setEvaluationData] = useState({
 		rating: 0,
 		comment: "",
@@ -63,8 +64,14 @@ export default function CustomerDashboard() {
 
 	const handleCancelTicket = () => {
 		// TODO: Implement cancel ticket logic
-		console.log("Cancelling ticket:", currentTicket.ticketNumber);
+		console.log(
+			"Cancelling ticket:",
+			currentTicket.ticketNumber,
+			"Reason:",
+			cancelReason
+		);
 		setShowCancelDialog(false);
+		setCancelReason("");
 	};
 
 	const handleDownloadTicket = () => {
@@ -740,6 +747,18 @@ export default function CustomerDashboard() {
 										rejoin.
 									</p>
 								</div>
+								<div className="space-y-2">
+									<Label className="text-sm font-medium text-[#071952]">
+										Reason for cancellation
+									</Label>
+									<Textarea
+										placeholder="Please tell us why you're cancelling (required)"
+										value={cancelReason}
+										onChange={(e) => setCancelReason(e.target.value)}
+										className="min-h-[90px] border-2 border-red-200 focus:border-red-300"
+										suppressHydrationWarning
+									/>
+								</div>
 								<div className="flex gap-3">
 									<Button
 										onClick={() => setShowCancelDialog(false)}
@@ -750,6 +769,7 @@ export default function CustomerDashboard() {
 									</Button>
 									<Button
 										onClick={handleCancelTicket}
+										disabled={!cancelReason.trim()}
 										className="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium"
 									>
 										Cancel Ticket

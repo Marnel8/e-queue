@@ -109,10 +109,13 @@ export default function StaffDashboard() {
 	const [qrCodeScanned, setQrCodeScanned] = useState(false);
 
 	// Text-to-speech function to announce next customer
-	const announceNextCustomer = (customerName: string, ticketNumber: string) => {
+	const announceNextCustomer = (
+		_customerName: string,
+		ticketNumber: string
+	) => {
 		if ("speechSynthesis" in window) {
 			const utterance = new SpeechSynthesisUtterance(
-				`Next customer: ${customerName}, ticket number ${ticketNumber}. Please proceed to the counter.`
+				`Next ticket number ${ticketNumber}. Please proceed to the counter.`
 			);
 			utterance.rate = 0.9;
 			utterance.pitch = 1.0;
@@ -795,8 +798,8 @@ export default function StaffDashboard() {
 										className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 border rounded-lg"
 									>
 										<div className="flex items-center gap-3 min-w-0 flex-1">
-											<div className="w-8 h-8 bg-secondary rounded-full flex items-center justify-center flex-shrink-0">
-												<span className="text-secondary-foreground font-medium text-sm">
+											<div className="w-12 h-12 rounded-full bg-[#088395] text-white flex items-center justify-center flex-shrink-0">
+												<span className="font-bold text-base leading-none">
 													{customer.ticketNumber}
 												</span>
 											</div>

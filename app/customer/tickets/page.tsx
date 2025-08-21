@@ -1,3 +1,5 @@
+"use client";
+
 import { CustomerLayout } from "@/components/customer/layout";
 import {
 	Card,
@@ -18,6 +20,9 @@ import {
 	CheckCircle,
 	AlertCircle,
 } from "lucide-react";
+import { useState } from "react";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 const activeTickets = [
 	{
@@ -108,6 +113,24 @@ const getStatusIcon = (status: string) => {
 };
 
 export default function MyTickets() {
+	const [showCancelDialog, setShowCancelDialog] = useState(false);
+	const [cancelReason, setCancelReason] = useState("");
+	const [ticketToCancel, setTicketToCancel] = useState<number | null>(null);
+
+	const openCancelDialog = (ticketId: number) => {
+		setTicketToCancel(ticketId);
+		setShowCancelDialog(true);
+	};
+
+	const handleConfirmCancel = () => {
+		if (ticketToCancel == null) return;
+		// TODO: Implement cancel logic for the ticket with ID ticketToCancel
+		console.log("Cancel ticket", ticketToCancel, "Reason:", cancelReason);
+		setShowCancelDialog(false);
+		setCancelReason("");
+		setTicketToCancel(null);
+	};
+
 	return (
 		<CustomerLayout
 			title="My Tickets"
@@ -268,6 +291,7 @@ export default function MyTickets() {
 														size="sm"
 														variant="outline"
 														className="text-red-600 border-red-200 hover:bg-red-50 flex-1 sm:flex-none bg-transparent"
+														onClick={() => openCancelDialog(ticket.id)}
 													>
 														<X className="w-4 h-4 mr-2" />
 														Cancel
@@ -427,6 +451,59 @@ export default function MyTickets() {
 						</Card>
 					</TabsContent>
 				</Tabs>
+
+				{showCancelDialog && (
+					<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+						<Card className="w-full max-w-md mx-4 border-2 border-red-200">
+							<CardHeader className="bg-red-50">
+								<CardTitle className="flex items-center gap-2 text-red-700">
+									<AlertCircle className="w-5 h-5 text-red-600" />
+									Cancel Ticket
+								</CardTitle>
+								<CardDescription className="text-red-600">
+									Are you sure you want to cancel this ticket?
+								</CardDescription>
+							</CardHeader>
+							<CardContent className="space-y-4 pt-4">
+								<div className="p-4 bg-red-100 border-2 border-red-300 rounded-lg">
+									<p className="text-sm text-red-800 font-medium">
+										<strong>Warning:</strong> Cancelling your ticket will remove
+										you from the queue. You'll need to book a new ticket to
+										rejoin.
+									</p>
+								</div>
+								<div className="space-y-2">
+									<Label className="text-sm font-medium">
+										Reason for cancellation
+									</Label>
+									<Textarea
+										placeholder="Please tell us why you're cancelling (required)"
+										value={cancelReason}
+										onChange={(e) => setCancelReason(e.target.value)}
+										className="min-h-[90px] border-2 border-red-200 focus:border-red-300"
+										suppressHydrationWarning
+									/>
+								</div>
+								<div className="flex gap-3">
+									<Button
+										onClick={() => setShowCancelDialog(false)}
+										variant="outline"
+										className="flex-1"
+									>
+										Keep Ticket
+									</Button>
+									<Button
+										onClick={handleConfirmCancel}
+										disabled={!cancelReason.trim()}
+										className="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium"
+									>
+										Cancel Ticket
+									</Button>
+								</div>
+							</CardContent>
+						</Card>
+					</div>
+				)}
 			</div>
 		</CustomerLayout>
 	);

@@ -52,6 +52,21 @@ export default function Feedback() {
 				{ id: "counseling", name: "Counseling" },
 				{ id: "clearance", name: "Guidance Clearance" },
 			],
+			admin: [
+				{ id: "requests", name: "Document Requests" },
+				{ id: "certificates", name: "Certificate Processing" },
+				{ id: "inquiries", name: "General Inquiries" },
+			],
+			clinic: [
+				{ id: "consultation", name: "Consultation" },
+				{ id: "first-aid", name: "First Aid" },
+				{ id: "medical-cert", name: "Medical Certificate" },
+			],
+			marketing: [
+				{ id: "admissions", name: "Admissions Inquiry" },
+				{ id: "campus-tour", name: "Campus Tour Scheduling" },
+				{ id: "info-request", name: "Information Request" },
+			],
 		}),
 		[]
 	);
@@ -100,13 +115,14 @@ export default function Feedback() {
 									<SelectValue placeholder="Select office you visited" />
 								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value="registrar">Registrar Office</SelectItem>
-									<SelectItem value="cashier">Cashier Office</SelectItem>
-									<SelectItem value="student-affairs">
-										Student Affairs Office
-									</SelectItem>
-									<SelectItem value="library">Library Services</SelectItem>
-									<SelectItem value="guidance">Guidance Office</SelectItem>
+									<SelectItem value="student-affairs">SAS Office</SelectItem>
+									<SelectItem value="registrar">Registrar</SelectItem>
+									<SelectItem value="guidance">Guidance</SelectItem>
+									<SelectItem value="cashier">Cashier</SelectItem>
+									<SelectItem value="admin">Admin Office</SelectItem>
+									<SelectItem value="clinic">Clinic</SelectItem>
+									<SelectItem value="library">Library</SelectItem>
+									<SelectItem value="marketing">Marketing Center</SelectItem>
 								</SelectContent>
 							</Select>
 						</div>

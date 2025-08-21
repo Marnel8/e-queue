@@ -21,7 +21,7 @@ const navigation = [
 	{ name: "My Queue", href: "/customer", icon: LayoutDashboard },
 	{ name: "Get Ticket", href: "/customer/book", icon: Calendar },
 	{ name: "My Tickets", href: "/customer/tickets", icon: Ticket },
-	{ name: "Evaluation", href: "/customer/evaluation", icon: MessageSquare },
+	{ name: "Feedback", href: "/customer/feedback", icon: MessageSquare },
 	{ name: "Violations", href: "/customer/violations", icon: AlertTriangle },
 	{ name: "Profile", href: "/customer/profile", icon: User },
 ];
@@ -30,7 +30,7 @@ const mobileNavigation = [
 	{ name: "Queue", href: "/customer", icon: LayoutDashboard },
 	{ name: "Ticket", href: "/customer/book", icon: Calendar },
 	{ name: "Tickets", href: "/customer/tickets", icon: Ticket },
-	{ name: "Eval", href: "/customer/evaluation", icon: MessageSquare },
+	{ name: "Feedback", href: "/customer/feedback", icon: MessageSquare },
 	{ name: "Violations", href: "/customer/violations", icon: AlertTriangle },
 	{ name: "Profile", href: "/customer/profile", icon: User },
 ];
