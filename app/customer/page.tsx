@@ -26,10 +26,13 @@ import {
 	Star,
 	MessageSquare,
 	Send,
+	QrCode,
+	Monitor,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ViolationsDisplay } from "@/components/ui/violations-display";
+import { QRScannerComponent } from "@/components/ui/qr-scanner";
 import QRCode from "react-qr-code";
 
 const currentTicket = {
@@ -43,6 +46,9 @@ const currentTicket = {
 	status: "Waiting",
 	fee: "₱0.00",
 	requirements: ["Valid ID", "Request Form", "Payment Receipt"],
+	deskId: 1,
+	deskName: "Desk 1",
+	assignedStaff: "Ana Rodriguez",
 };
 
 const upcomingTickets: any[] = [];
@@ -53,6 +59,7 @@ export default function CustomerDashboard() {
 	const [transactionCompleted, setTransactionCompleted] = useState(false);
 	const [hasPendingEvaluation, setHasPendingEvaluation] = useState(false);
 	const [cancelReason, setCancelReason] = useState("");
+	const [showQRScanner, setShowQRScanner] = useState(false);
 	const [evaluationData, setEvaluationData] = useState({
 		rating: 0,
 		comment: "",
@@ -77,6 +84,33 @@ export default function CustomerDashboard() {
 	const handleDownloadTicket = () => {
 		// TODO: Implement download ticket logic
 		console.log("Downloading ticket:", currentTicket.ticketNumber);
+	};
+
+	const handleQRScanResult = (result: string) => {
+		try {
+			// Parse the QR code result
+			const qrData = JSON.parse(result);
+			console.log("QR Scan Result:", qrData);
+			
+			// Handle different types of QR codes
+			if (qrData.type === "service_evaluation") {
+				// If it's an evaluation QR code, open the evaluation form
+				setShowEvaluationForm(true);
+				setTransactionCompleted(true);
+			} else if (qrData.type === "ticket_info") {
+				// If it's ticket info, you could display ticket details
+				console.log("Ticket info scanned:", qrData);
+			} else {
+				// Generic QR code handling
+				console.log("Generic QR code scanned:", result);
+				alert(`QR Code scanned: ${result}`);
+			}
+		} catch (error) {
+			// If it's not JSON, treat as plain text
+			console.log("Plain text QR code:", result);
+			alert(`QR Code content: ${result}`);
+		}
+		setShowQRScanner(false);
 	};
 
 	const handleEvaluationSubmit = () => {
@@ -302,6 +336,12 @@ export default function CustomerDashboard() {
 												Estimated wait: {currentTicket.estimatedWait}
 											</span>
 										</div>
+										<div className="flex items-center gap-2 text-sm bg-white p-2 rounded border">
+											<Monitor className="w-4 h-4 text-[#088395]" />
+											<span className="text-gray-800 font-medium">
+												{currentTicket.deskName} - {currentTicket.assignedStaff}
+											</span>
+										</div>
 									</div>
 								</div>
 
@@ -353,21 +393,33 @@ export default function CustomerDashboard() {
 							</div>
 
 							{/* Actions */}
-							<div className="flex flex-wrap gap-3">
+							<div className="space-y-3">
+								{/* QR Scanner Button - Prominent position */}
 								<Button
-									onClick={handleDownloadTicket}
-									className="flex-1 gradient-primary text-white font-medium"
+									onClick={() => setShowQRScanner(true)}
+									className="w-full bg-[#37B7C3] hover:bg-[#088395] text-white font-medium text-lg py-3"
 								>
-									<Download className="w-4 h-4 mr-2" />
-									Download Ticket
+									<QrCode className="w-5 h-5 mr-2" />
+									Scan QR Code
 								</Button>
-								<Button
-									onClick={() => setShowCancelDialog(true)}
-									className="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium"
-								>
-									<X className="w-4 h-4 mr-2" />
-									Cancel Ticket
-								</Button>
+								
+								{/* Other Actions */}
+								<div className="flex flex-wrap gap-3">
+									<Button
+										onClick={handleDownloadTicket}
+										className="flex-1 gradient-primary text-white font-medium"
+									>
+										<Download className="w-4 h-4 mr-2" />
+										Download Ticket
+									</Button>
+									<Button
+										onClick={() => setShowCancelDialog(true)}
+										className="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium"
+									>
+										<X className="w-4 h-4 mr-2" />
+										Cancel Ticket
+									</Button>
+								</div>
 							</div>
 
 							{/* Live Updates */}
@@ -375,11 +427,12 @@ export default function CustomerDashboard() {
 								<div className="flex items-center gap-2 mb-3">
 									<div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
 									<span className="text-sm font-semibold text-[#071952]">
-										Live Updates
+										Live Updates - {currentTicket.deskName}
 									</span>
 								</div>
 								<div className="space-y-2 text-sm text-gray-800">
 									<p className="font-medium">• Currently serving: A012</p>
+									<p className="font-medium">• Staff: {currentTicket.assignedStaff}</p>
 									<p className="font-medium">
 										• Average service time: 6 minutes
 									</p>
@@ -779,6 +832,13 @@ export default function CustomerDashboard() {
 						</Card>
 					</div>
 				)}
+
+				{/* QR Scanner Component */}
+				<QRScannerComponent
+					isOpen={showQRScanner}
+					onClose={() => setShowQRScanner(false)}
+					onScanResult={handleQRScanResult}
+				/>
 			</div>
 		</CustomerLayout>
 	);

@@ -153,8 +153,8 @@ export function StaffSidebar({
 					{navigation.map((item) => {
 						const isActive = pathname === item.href;
 						return (
-							<li key={item.name}>
 								<Link
+									key={item.name}
 									href={item.href}
 									className={cn(
 										"flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-colors",
@@ -168,7 +168,6 @@ export function StaffSidebar({
 									<item.icon className="w-5 h-5 flex-shrink-0" />
 									{(!collapsed || isMobile) && <span>{item.name}</span>}
 								</Link>
-							</li>
 						);
 					})}
 				</ul>

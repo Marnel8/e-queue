@@ -20,7 +20,6 @@ export function OfficeAdminLayout({ children, title, description }: OfficeAdminL
 
   return (
     <div className="min-h-screen bg-background flex">
-      <OfficeAdminSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
 
       <div className="flex-1 flex flex-col">
         {/* Top Bar */}

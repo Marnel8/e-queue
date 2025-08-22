@@ -27,6 +27,11 @@ import {
 	UserCheck,
 	Shield,
 	X,
+	Image as ImageIcon,
+	Eye,
+	Download,
+	QrCode,
+	Monitor,
 } from "lucide-react";
 import QRCode from "react-qr-code";
 
@@ -42,6 +47,9 @@ const queueData = [
 		phone: "+63 912 345 6789",
 		email: "juan.delacruz@student.omsc.edu.ph",
 		bookedTime: "9:00 AM",
+		priorityLaneImage: null, // No image for regular priority
+		deskId: 1,
+		assignedStaff: "Ana Rodriguez",
 	},
 	{
 		id: 2,
@@ -54,6 +62,9 @@ const queueData = [
 		phone: "+63 923 456 7890",
 		email: "maria.santos@student.omsc.edu.ph",
 		bookedTime: "9:15 AM",
+		priorityLaneImage: null,
+		deskId: 1,
+		assignedStaff: "Ana Rodriguez",
 	},
 	{
 		id: 3,
@@ -66,6 +77,9 @@ const queueData = [
 		phone: "+63 934 567 8901",
 		email: "pedro.garcia@student.omsc.edu.ph",
 		bookedTime: "9:30 AM",
+		priorityLaneImage: "/images/priority-lane-sample.jpg", // Sample image for priority customer
+		deskId: 2,
+		assignedStaff: "Carlos Mendoza",
 	},
 	{
 		id: 4,
@@ -78,6 +92,9 @@ const queueData = [
 		phone: "+63 945 678 9012",
 		email: "ana.rodriguez@student.omsc.edu.ph",
 		bookedTime: "9:45 AM",
+		priorityLaneImage: null,
+		deskId: 1,
+		assignedStaff: "Ana Rodriguez",
 	},
 ];
 
@@ -100,13 +117,27 @@ const getPriorityBadge = (priority: string) => {
 };
 
 export default function StaffDashboard() {
-	const [currentQueue, setCurrentQueue] = useState(queueData[0]);
-	const [queueList, setQueueList] = useState(queueData.slice(1));
+	// Staff assignment management
+	const [currentStaff, setCurrentStaff] = useState({
+		id: "staff-001",
+		name: "Ana Rodriguez",
+		office: "Registrar Office",
+		assignedAt: new Date().toISOString(),
+		deskId: 1,
+		deskName: "Desk 1",
+	});
+
+	// Filter queue data by current staff's desk
+	const deskQueueData = queueData.filter(ticket => ticket.deskId === currentStaff.deskId);
+	const [currentQueue, setCurrentQueue] = useState(deskQueueData[0] || null);
+	const [queueList, setQueueList] = useState(deskQueueData.slice(1));
 	const [evaluationScanned, setEvaluationScanned] = useState(false);
 	const [isMounted, setIsMounted] = useState(false);
 	const [customRating, setCustomRating] = useState(5);
 	const [customWaitTime, setCustomWaitTime] = useState(5);
 	const [qrCodeScanned, setQrCodeScanned] = useState(false);
+	const [showImageModal, setShowImageModal] = useState(false);
+	const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
 	// Text-to-speech function to announce next customer
 	const announceNextCustomer = (
@@ -148,22 +179,22 @@ export default function StaffDashboard() {
 		setTimeout(() => setQrCodeScanned(false), 5000);
 	};
 
-	// Staff assignment management
-	const [currentStaff, setCurrentStaff] = useState({
-		id: "staff-001",
-		name: "Juan Dela Cruz",
-		office: "Registrar Office",
-		assignedAt: new Date().toISOString(),
-	});
 	const [isQueueLocked, setIsQueueLocked] = useState(false);
 	const [showStaffSwitch, setShowStaffSwitch] = useState(false);
 
 	// Available staff members for this office
 	const availableStaff = [
-		{ id: "staff-001", name: "Juan Dela Cruz", status: "active" },
-		{ id: "staff-002", name: "Maria Santos", status: "available" },
-		{ id: "staff-003", name: "Pedro Garcia", status: "available" },
+		{ id: "staff-001", name: "Ana Rodriguez", status: "active", deskId: 1, deskName: "Desk 1" },
+		{ id: "staff-002", name: "Carlos Mendoza", status: "available", deskId: 2, deskName: "Desk 2" },
+		{ id: "staff-003", name: "Elena Santos", status: "available", deskId: 3, deskName: "Desk 3" },
 	];
+
+	// Update queue when staff changes desk
+	useEffect(() => {
+		const newDeskQueueData = queueData.filter(ticket => ticket.deskId === currentStaff.deskId);
+		setCurrentQueue(newDeskQueueData[0] || null);
+		setQueueList(newDeskQueueData.slice(1));
+	}, [currentStaff.deskId]);
 
 	// Prevent hydration mismatch by only rendering after mount
 	useEffect(() => {
@@ -247,12 +278,6 @@ export default function StaffDashboard() {
 
 	const handleDone = () => {
 		if (currentQueue) {
-			// Generate QR code for evaluation
-			generateEvaluationQR(currentQueue);
-
-			// Set QR code as scanned automatically
-			setQrCodeScanned(true);
-
 			// Move to next customer
 			if (queueList.length > 0) {
 				const nextCustomer = queueList[0];
@@ -267,35 +292,10 @@ export default function StaffDashboard() {
 					);
 				}, 1000);
 			}
-
-			// Reset QR code scanned status after announcement
-			setTimeout(() => setQrCodeScanned(false), 5000);
 		}
 	};
 
-	const generateEvaluationQR = (customer: any) => {
-		if (typeof window === "undefined") return;
 
-		const qrData = {
-			ticketNumber: customer.ticketNumber,
-			customerName: customer.customerName,
-			office: currentStaff.office,
-			service: customer.service,
-			completedAt: new Date().toISOString(),
-			staffId: currentStaff.id,
-			staffName: currentStaff.name,
-		};
-
-		// Store QR data for customer access
-		localStorage.setItem(
-			`equeue_qr_${customer.ticketNumber}`,
-			JSON.stringify(qrData)
-		);
-
-		alert(
-			`Evaluation QR code generated for ${customer.customerName} (${customer.ticketNumber})`
-		);
-	};
 
 	const simulateCustomerEvaluation = (evaluationType: string) => {
 		if (typeof window === "undefined") return;
@@ -462,6 +462,26 @@ export default function StaffDashboard() {
 		alert("All evaluations cleared successfully!");
 	};
 
+	// Image viewer functions
+	const openImageModal = (imageUrl: string) => {
+		setSelectedImage(imageUrl);
+		setShowImageModal(true);
+	};
+
+	const closeImageModal = () => {
+		setShowImageModal(false);
+		setSelectedImage(null);
+	};
+
+	const downloadImage = (imageUrl: string, customerName: string) => {
+		const link = document.createElement('a');
+		link.href = imageUrl;
+		link.download = `priority-lane-${customerName.replace(/\s+/g, '-')}.jpg`;
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+	};
+
 	// Don't render until mounted to prevent hydration issues
 	if (!isMounted) {
 		return (
@@ -542,8 +562,12 @@ export default function StaffDashboard() {
 								<p className="text-sm text-muted-foreground">
 									Managing: {currentStaff.office}
 								</p>
+								<div className="flex items-center gap-2 text-xs text-muted-foreground">
+									<Monitor className="w-3 h-3" />
+									<span>Assigned to {currentStaff.deskName}</span>
+								</div>
 								<p className="text-xs text-muted-foreground">
-									Assigned:{" "}
+									Since:{" "}
 									{new Date(currentStaff.assignedAt).toLocaleTimeString()}
 								</p>
 							</div>
@@ -579,7 +603,11 @@ export default function StaffDashboard() {
 									<div className="flex items-center justify-between">
 										<div>
 											<p className="font-medium">{staff.name}</p>
-											<p className="text-sm text-muted-foreground">
+											<div className="flex items-center gap-2 text-sm text-muted-foreground">
+												<Monitor className="w-3 h-3" />
+												<span>{staff.deskName}</span>
+											</div>
+											<p className="text-xs text-muted-foreground">
 												Status:{" "}
 												{staff.status === "active"
 													? "Currently Active"
@@ -629,7 +657,7 @@ export default function StaffDashboard() {
 						<CardContent className="p-4">
 							<div className="flex items-center justify-between">
 								<div>
-									<p className="text-sm text-gray-600">In Queue</p>
+									<p className="text-sm text-gray-600">In Queue ({currentStaff.deskName})</p>
 									<p className="text-2xl font-bold text-[#071952]">
 										{queueList.length}
 									</p>
@@ -728,6 +756,67 @@ export default function StaffDashboard() {
 									</div>
 								</div>
 
+								{/* Priority Lane Image Section */}
+								{currentQueue.priority === "Priority" && (
+									<div className="mt-6 p-4 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg">
+										<div className="flex items-center gap-2 mb-3">
+											<ImageIcon className="w-5 h-5 text-amber-600" />
+											<h4 className="font-semibold text-amber-800">
+												Priority Lane Image
+											</h4>
+											<Badge className="bg-amber-100 text-amber-800 border-amber-300">
+												Priority Customer
+											</Badge>
+										</div>
+										
+										{currentQueue.priorityLaneImage ? (
+											<div className="space-y-3">
+												<div className="relative group">
+													<img
+														src={currentQueue.priorityLaneImage}
+														alt={`Priority lane image for ${currentQueue.customerName}`}
+														className="w-full h-48 object-cover rounded-lg border-2 border-amber-200 cursor-pointer transition-transform duration-200 hover:scale-105"
+														onClick={() => openImageModal(currentQueue.priorityLaneImage!)}
+													/>
+													<div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
+														<Eye className="w-8 h-8 text-white" />
+													</div>
+												</div>
+												<div className="flex gap-2">
+													<Button
+														onClick={() => openImageModal(currentQueue.priorityLaneImage!)}
+														variant="outline"
+														className="border-amber-300 text-amber-700 hover:bg-amber-50"
+													>
+														<Eye className="w-4 h-4 mr-2" />
+														View Full Size
+													</Button>
+													<Button
+														onClick={() => downloadImage(currentQueue.priorityLaneImage!, currentQueue.customerName)}
+														variant="outline"
+														className="border-amber-300 text-amber-700 hover:bg-amber-50"
+													>
+														<Download className="w-4 h-4 mr-2" />
+														Download
+													</Button>
+												</div>
+												<p className="text-sm text-amber-700">
+													This customer has priority access and uploaded an image during booking.
+													Click to view full size or download for reference.
+												</p>
+											</div>
+										) : (
+											<div className="text-center py-6">
+												<ImageIcon className="w-12 h-12 text-amber-400 mx-auto mb-3" />
+												<p className="text-amber-600 font-medium">No Image Uploaded</p>
+												<p className="text-sm text-amber-500">
+													This priority customer did not upload an image during booking.
+												</p>
+											</div>
+										)}
+									</div>
+								)}
+
 								{/* Queue Controls */}
 								<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4">
 									<Button
@@ -735,15 +824,7 @@ export default function StaffDashboard() {
 										className="gradient-primary text-white"
 									>
 										<CheckCircle className="w-4 h-4 mr-2" />
-										Complete & Generate QR
-									</Button>
-									<Button
-										onClick={() => generateEvaluationQR(currentQueue)}
-										variant="outline"
-										className="bg-transparent"
-									>
-										<CheckCircle className="w-4 h-4 mr-2" />
-										Generate Evaluation QR
+										Mark Complete
 									</Button>
 									<Button
 										onClick={handleNext}
@@ -770,6 +851,55 @@ export default function StaffDashboard() {
 										Skip
 									</Button>
 								</div>
+
+								{/* QR Code Display Section - Right below current customer */}
+								{currentQueue && (
+									<div className="mt-6 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg">
+										<div className="text-center mb-4">
+											<h4 className="text-xl font-bold text-blue-800 mb-2">
+												📱 Customer Evaluation QR Code
+											</h4>
+											<p className="text-blue-700">
+												Show this QR code to {currentQueue.customerName} after completing their service
+											</p>
+										</div>
+										
+										<div className="flex justify-center">
+											<div className="bg-white p-8 rounded-xl border-4 border-blue-200 shadow-lg">
+												<QRCode
+													value={JSON.stringify({
+														type: "evaluation_form",
+														formId: "eval-001",
+														office: currentStaff.office,
+														title: "General Service Evaluation",
+														customerTicket: currentQueue.ticketNumber,
+														customerName: currentQueue.customerName,
+														service: currentQueue.service,
+														url: `${window.location.origin}/customer/evaluation/eval-001?ticket=${currentQueue.ticketNumber}`,
+													})}
+													level="H"
+													size={280}
+													style={{ height: 280, width: 280 }}
+												/>
+											</div>
+										</div>
+										
+										<div className="text-center mt-4">
+											<p className="text-sm text-blue-700 font-medium">
+												{currentQueue.customerName} - {currentQueue.service}
+											</p>
+											<p className="text-xs text-blue-600 mt-1">
+												Ticket: {currentQueue.ticketNumber}
+											</p>
+											<div className="mt-3 p-3 bg-blue-100 border border-blue-300 rounded-lg max-w-md mx-auto">
+												<p className="text-xs text-blue-800">
+													<strong>Instructions:</strong> Customer can scan this QR code with their phone to submit a service evaluation.
+													The evaluation will automatically include their ticket and service information.
+												</p>
+											</div>
+										</div>
+									</div>
+								)}
 							</>
 						) : (
 							<div className="text-center py-8">
@@ -810,6 +940,14 @@ export default function StaffDashboard() {
 												<p className="text-sm text-muted-foreground truncate">
 													{customer.service}
 												</p>
+												{customer.priority === "Priority" && customer.priorityLaneImage && (
+													<div className="flex items-center gap-2 mt-1">
+														<ImageIcon className="w-3 h-3 text-amber-600" />
+														<span className="text-xs text-amber-600 font-medium">
+															Has Priority Image
+														</span>
+													</div>
+												)}
 											</div>
 										</div>
 										<div className="text-left sm:text-right flex-shrink-0">
@@ -865,276 +1003,140 @@ export default function StaffDashboard() {
 					</CardContent>
 				</Card>
 
-				{/* QR Code Generation & Customer Evaluation Simulation */}
+				{/* Customer Evaluation Form */}
 				<Card className="border-2 border-green-200 bg-gradient-to-br from-green-50 to-white">
 					<CardHeader className="pb-4">
 						<CardTitle className="text-lg font-semibold text-green-800 flex items-center gap-2">
 							<CheckCircle className="w-5 h-5 text-green-600" />
-							QR Code Generation & Customer Evaluation Simulation
+							Customer Evaluation Form
 						</CardTitle>
 						<CardDescription className="text-green-700">
-							Test the complete evaluation workflow: generate QR codes and
-							simulate customer evaluations
+							Submit customer evaluation with auto-filled customer information
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<div className="space-y-6">
-							{/* Current Service QR Code */}
-							<div className="bg-white p-6 rounded-lg border-2 border-green-200">
-								<h4 className="font-semibold mb-4 text-green-800">
-									Current Service QR Code
-								</h4>
-								{currentQueue ? (
-									<div className="space-y-4">
-										<div className="text-center p-6 bg-green-100 rounded-lg border border-green-300">
-											<div className="w-48 h-48 bg-white rounded-lg border-2 border-green-200 mx-auto mb-4 flex items-center justify-center p-4">
-												<QRCode
-													value={JSON.stringify({
-														ticketNumber: currentQueue.ticketNumber,
-														customerName: currentQueue.customerName,
-														office: currentStaff.office,
-														service: currentQueue.service,
-														completedAt: new Date().toISOString(),
-														staffId: currentStaff.id,
-														staffName: currentStaff.name,
-													})}
-													level="H"
-													size={160}
-													style={{ height: 160, width: 160 }}
-												/>
-											</div>
-											<p className="text-sm text-green-700 font-medium">
-												QR Code for {currentQueue.ticketNumber}
-											</p>
-											<p className="text-xs text-green-600">
-												{currentQueue.customerName} - {currentQueue.service}
-											</p>
-											{qrCodeScanned && (
-												<div className="mt-3 p-3 bg-blue-100 border border-blue-300 rounded-lg animate-pulse">
-													<p className="text-xs text-blue-700 font-medium">
-														✓ QR Code Scanned Successfully!
-													</p>
-													<p className="text-xs text-blue-600">
-														Announcing next customer...
-													</p>
-												</div>
-											)}
-										</div>
-										<div className="flex gap-2">
-											<Button
-												onClick={() => generateEvaluationQR(currentQueue)}
-												className="bg-green-600 hover:bg-green-700 text-white"
-											>
-												<CheckCircle className="w-4 h-4 mr-2" />
-												Generate Evaluation QR
-											</Button>
-											<Button
-												onClick={handleDone}
-												variant="outline"
-												className="border-green-300 text-green-700 hover:bg-green-50"
-											>
-												Complete & Generate QR
-											</Button>
-											<Button
-												onClick={() =>
-													handleQRCodeScanned(currentQueue.ticketNumber)
-												}
-												variant="outline"
-												className="border-blue-300 text-blue-700 hover:bg-blue-50"
-											>
-												<CheckCircle className="w-4 h-4 mr-2" />
-												Simulate QR Scan
-											</Button>
-										</div>
-									</div>
-								) : (
-									<div className="text-center py-4 text-green-600">
-										No current customer to generate QR for
-									</div>
-								)}
-							</div>
-
-							{/* Customer Evaluation Simulation */}
-							<div className="bg-white p-4 rounded-lg border-2 border-green-200">
-								<h4 className="font-semibold mb-3 text-green-800">
-									Customer Evaluation Simulation
-								</h4>
-								<p className="text-sm text-green-700 mb-4">
-									Simulate how customers would rate your service after scanning
-									the QR code
-								</p>
-
-								{/* Evaluation Scenarios */}
-								<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
-									<Button
-										onClick={() =>
-											simulateCustomerEvaluation("excellent_service")
-										}
-										variant="outline"
-										className="h-16 flex flex-col gap-1 bg-white hover:bg-green-50 hover:border-green-300 transition-all duration-200 border-green-200"
-									>
-										<div className="p-1 bg-green-100 rounded">
-											<CheckCircle className="w-4 h-4 text-green-600" />
-										</div>
-										<span className="text-xs font-medium text-green-700">
-											Excellent Service
-										</span>
-									</Button>
-
-									<Button
-										onClick={() => simulateCustomerEvaluation("good_service")}
-										variant="outline"
-										className="h-16 flex flex-col gap-1 bg-white hover:bg-green-50 hover:border-green-300 transition-all duration-200 border-green-200"
-									>
-										<div className="p-1 bg-green-100 rounded">
-											<CheckCircle className="w-4 h-4 text-green-600" />
-										</div>
-										<span className="text-xs font-medium text-green-700">
-											Good Service
-										</span>
-									</Button>
-
-									<Button
-										onClick={() =>
-											simulateCustomerEvaluation("average_service")
-										}
-										variant="outline"
-										className="h-16 flex flex-col gap-1 bg-white hover:bg-yellow-50 hover:border-yellow-300 transition-all duration-200 border-green-200"
-									>
-										<div className="p-1 bg-yellow-100 rounded">
-											<AlertCircle className="w-4 h-4 text-yellow-600" />
-										</div>
-										<span className="text-xs font-medium text-yellow-700">
-											Average Service
-										</span>
-									</Button>
-
-									<Button
-										onClick={() => simulateCustomerEvaluation("poor_service")}
-										variant="outline"
-										className="h-16 flex flex-col gap-1 bg-white hover:bg-red-50 hover:border-red-300 transition-all duration-200 border-green-200"
-									>
-										<div className="p-1 bg-red-100 rounded">
-											<AlertCircle className="w-4 h-4 text-red-600" />
-										</div>
-										<span className="text-xs font-medium text-red-700">
-											Poor Service
-										</span>
-									</Button>
-
-									<Button
-										onClick={() => simulateCustomerEvaluation("with_complaint")}
-										variant="outline"
-										className="h-16 flex flex-col gap-1 bg-white hover:bg-orange-50 hover:border-orange-300 transition-all duration-200 border-green-200"
-									>
-										<div className="p-1 bg-orange-100 rounded">
-											<AlertCircle className="w-4 h-4 text-orange-600" />
-										</div>
-										<span className="text-xs font-medium text-orange-700">
-											With Complaint
-										</span>
-									</Button>
-
-									<Button
-										onClick={() => simulateCustomerEvaluation("no_evaluation")}
-										variant="outline"
-										className="h-16 flex flex-col gap-1 bg-white hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 border-green-200"
-									>
-										<div className="p-1 bg-gray-100 rounded">
-											<X className="w-4 h-4 text-gray-600" />
-										</div>
-										<span className="text-xs font-medium text-gray-700">
-											No Evaluation
-										</span>
-									</Button>
-								</div>
-
-								{/* Custom Evaluation */}
-								<div className="border-t border-green-200 pt-4">
-									<h5 className="font-medium mb-3 text-green-800">
-										Custom Evaluation
-									</h5>
-									<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+						{currentQueue ? (
+							<div className="space-y-6">
+								{/* Customer Information Display */}
+								<div className="bg-white p-4 rounded-lg border-2 border-green-200">
+									<h4 className="font-semibold mb-3 text-green-800">
+										Customer Information (Auto-filled)
+									</h4>
+									<div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
 										<div>
-											<label className="block text-sm font-medium text-green-700 mb-2">
-												Service Rating (1-5)
+											<label className="block text-sm font-medium text-green-700 mb-1">
+												Ticket Number
 											</label>
 											<input
-												type="range"
-												min="1"
-												max="5"
-												value={customRating}
-												onChange={(e) =>
-													setCustomRating(parseInt(e.target.value))
-												}
-												className="w-full h-2 bg-green-200 rounded-lg appearance-none cursor-pointer"
+												type="text"
+												value={currentQueue.ticketNumber}
+												readOnly
+												className="w-full p-2 bg-green-50 border border-green-200 rounded-md text-green-800 font-medium"
 											/>
-											<div className="flex justify-between text-xs text-green-600 mt-1">
-												<span>1</span>
-												<span>2</span>
-												<span>3</span>
-												<span>4</span>
-												<span>5</span>
-											</div>
-											<p className="text-sm text-green-700 mt-1">
-												Rating: {customRating}/5
-											</p>
 										</div>
 										<div>
-											<label className="block text-sm font-medium text-green-700 mb-2">
-												Wait Time Rating (1-5)
+											<label className="block text-sm font-medium text-green-700 mb-1">
+												Customer Name
 											</label>
 											<input
-												type="range"
-												min="1"
-												max="5"
-												value={customWaitTime}
-												onChange={(e) =>
-													setCustomWaitTime(parseInt(e.target.value))
-												}
-												className="w-full h-2 bg-green-200 rounded-lg appearance-none cursor-pointer"
+												type="text"
+												value={currentQueue.customerName}
+												readOnly
+												className="w-full p-2 bg-green-50 border border-green-200 rounded-md text-green-800 font-medium"
 											/>
-											<div className="flex justify-between text-xs text-green-600 mt-1">
-												<span>1</span>
-												<span>2</span>
-												<span>3</span>
-												<span>4</span>
-												<span>5</span>
-											</div>
-											<p className="text-sm text-green-700 mt-1">
-												Rating: {customWaitTime}/5
-											</p>
+										</div>
+										<div>
+											<label className="block text-sm font-medium text-green-700 mb-1">
+												Service
+											</label>
+											<input
+												type="text"
+												value={currentQueue.service}
+												readOnly
+												className="w-full p-2 bg-green-50 border border-green-200 rounded-md text-green-800 font-medium"
+											/>
+										</div>
+										<div>
+											<label className="block text-sm font-medium text-green-700 mb-1">
+												Office
+											</label>
+											<input
+												type="text"
+												value={currentStaff.office}
+												readOnly
+												className="w-full p-2 bg-green-50 border border-green-200 rounded-md text-green-800 font-medium"
+											/>
 										</div>
 									</div>
-									<Button
-										onClick={simulateCustomCustomerEvaluation}
-										className="bg-green-600 hover:bg-green-700 text-white font-medium"
-									>
-										<CheckCircle className="w-4 h-4 mr-2" />
-										Submit Custom Evaluation
-									</Button>
+								</div>
+
+								{/* Evaluation Actions */}
+								<div className="bg-white p-4 rounded-lg border-2 border-green-200">
+									<h4 className="font-semibold mb-3 text-green-800">
+										Submit Evaluation
+									</h4>
+									<p className="text-sm text-green-700 mb-4">
+										Customer evaluation will be submitted with the auto-filled information above.
+									</p>
+									<div className="flex gap-3">
+										<Button
+											onClick={() => simulateCustomerEvaluation("excellent_service")}
+											className="bg-green-600 hover:bg-green-700 text-white"
+										>
+											<CheckCircle className="w-4 h-4 mr-2" />
+											Submit Positive Evaluation
+										</Button>
+										<Button
+											onClick={() => simulateCustomerEvaluation("average_service")}
+											variant="outline"
+											className="border-green-300 text-green-700 hover:bg-green-50"
+										>
+											Submit Average Evaluation
+										</Button>
+									</div>
 								</div>
 							</div>
-
-							<div className="flex gap-3 pt-4 border-t border-green-200">
-								<Button
-									onClick={clearAllEvaluations}
-									variant="outline"
-									className="bg-green-50 hover:bg-green-100 text-green-700 border-green-300 hover:border-green-400"
-								>
-									<X className="w-4 h-4 mr-2" />
-									Clear All Evaluations
-								</Button>
-
-								<div className="text-sm text-green-700 bg-green-100 px-3 py-2 rounded-lg flex items-center gap-2">
-									<CheckCircle className="w-4 h-4" />
-									<span>Test the complete customer evaluation workflow</span>
-								</div>
+						) : (
+							<div className="text-center py-8">
+								<AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+								<p className="text-muted-foreground">No current customer to evaluate</p>
 							</div>
-						</div>
+						)}
 					</CardContent>
 				</Card>
+
+
 			</div>
+
+		{/* Image Modal */}
+			{showImageModal && selectedImage && (
+				<div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+					<div className="relative max-w-4xl max-h-full">
+						<img
+							src={selectedImage}
+							alt="Priority lane image"
+							className="max-w-full max-h-full object-contain rounded-lg"
+						/>
+						<div className="absolute top-4 right-4 flex gap-2">
+							<Button
+								onClick={() => downloadImage(selectedImage, currentQueue?.customerName || 'customer')}
+								variant="outline"
+								className="bg-white/90 hover:bg-white text-gray-800 border-gray-300"
+							>
+								<Download className="w-4 h-4 mr-2" />
+								Download
+							</Button>
+							<Button
+								onClick={closeImageModal}
+								variant="outline"
+								className="bg-white/90 hover:bg-white text-gray-800 border-gray-300"
+							>
+								<X className="w-4 h-4" />
+							</Button>
+						</div>
+					</div>
+				</div>
+			)}
 		</StaffLayout>
 	);
 }

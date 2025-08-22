@@ -17,6 +17,9 @@ import {
 	ThumbsUp,
 	ThumbsDown,
 	AlertCircle,
+	Monitor,
+	UserCheck,
+	Coffee,
 } from "lucide-react";
 import { ViolationsDisplay } from "@/components/ui/violations-display";
 
@@ -82,6 +85,45 @@ const recentFeedback = [
 			"Long waiting time and confusing process. Staff needs better training.",
 		date: "2024-01-15 08:20 AM",
 		sentiment: "negative",
+	},
+];
+
+const deskData = [
+	{
+		id: 1,
+		name: "Desk 1",
+		assignedStaff: "Ana Rodriguez",
+		status: "active",
+		currentTicket: "TR-001",
+		queueLength: 3,
+		avgServiceTime: "4.2m",
+	},
+	{
+		id: 2,
+		name: "Desk 2",
+		assignedStaff: "Carlos Mendoza",
+		status: "active",
+		currentTicket: "CI-015",
+		queueLength: 5,
+		avgServiceTime: "5.1m",
+	},
+	{
+		id: 3,
+		name: "Desk 3",
+		assignedStaff: "Elena Santos",
+		status: "break",
+		currentTicket: null,
+		queueLength: 0,
+		avgServiceTime: "3.8m",
+	},
+	{
+		id: 4,
+		name: "Desk 4",
+		assignedStaff: null,
+		status: "inactive",
+		currentTicket: null,
+		queueLength: 0,
+		avgServiceTime: "0m",
 	},
 ];
 
@@ -153,6 +195,86 @@ export default function OfficeAdminDashboard() {
 					</CardContent>
 				</Card>
 			</div>
+
+			{/* Desk Management */}
+			<Card>
+				<CardHeader>
+					<CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+						<Monitor className="w-4 h-4 sm:w-5 sm:h-5" />
+						Desk Management
+					</CardTitle>
+					<CardDescription className="text-xs sm:text-sm">
+						Real-time desk status and staff assignments
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+						{deskData.map((desk) => (
+							<div
+								key={desk.id}
+								className={`rounded-lg border p-4 space-y-3 ${
+									desk.status === "active"
+										? "border-green-200 bg-green-50"
+										: desk.status === "break"
+										? "border-yellow-200 bg-yellow-50"
+										: "border-gray-200 bg-gray-50"
+								}`}
+							>
+								<div className="flex items-center justify-between">
+									<h4 className="font-medium text-sm">{desk.name}</h4>
+									<Badge
+										variant={
+											desk.status === "active"
+												? "default"
+												: desk.status === "break"
+												? "secondary"
+												: "outline"
+										}
+										className="text-xs"
+									>
+										{desk.status === "active" && <UserCheck className="w-3 h-3 mr-1" />}
+										{desk.status === "break" && <Coffee className="w-3 h-3 mr-1" />}
+										{desk.status}
+									</Badge>
+								</div>
+								
+								<div className="space-y-2">
+									<div className="text-xs text-muted-foreground">
+										<span className="font-medium">Staff:</span>{" "}
+										{desk.assignedStaff || "Unassigned"}
+									</div>
+									
+									{desk.currentTicket && (
+										<div className="text-xs text-muted-foreground">
+											<span className="font-medium">Current:</span>{" "}
+											{desk.currentTicket}
+										</div>
+									)}
+									
+									<div className="text-xs text-muted-foreground">
+										<span className="font-medium">Queue:</span>{" "}
+										{desk.queueLength} tickets
+									</div>
+									
+									<div className="text-xs text-muted-foreground">
+										<span className="font-medium">Avg. Time:</span>{" "}
+										{desk.avgServiceTime}
+									</div>
+								</div>
+								
+								<Button
+									variant="outline"
+									size="sm"
+									className="w-full text-xs"
+									disabled={desk.status === "inactive"}
+								>
+									Manage Desk
+								</Button>
+							</div>
+						))}
+					</div>
+				</CardContent>
+			</Card>
 
 			<div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
 				{/* Customer Feedback Analysis */}

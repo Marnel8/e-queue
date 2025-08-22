@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Plus, Search, MoreHorizontal, Edit, Trash2, User, Clock, CheckCircle } from "lucide-react"
+import { Plus, Search, MoreHorizontal, Edit, Trash2, User, Clock, CheckCircle, Monitor, Settings } from "lucide-react"
 
 const staffMembers = [
   {
@@ -24,6 +24,8 @@ const staffMembers = [
     queuesHandled: 23,
     avgServiceTime: "4.2m",
     lastActive: "Active now",
+    assignedDesk: "Desk 1",
+    deskId: 1,
   },
   {
     id: 2,
@@ -35,6 +37,8 @@ const staffMembers = [
     queuesHandled: 18,
     avgServiceTime: "5.1m",
     lastActive: "Active now",
+    assignedDesk: "Desk 2",
+    deskId: 2,
   },
   {
     id: 3,
@@ -46,6 +50,8 @@ const staffMembers = [
     queuesHandled: 15,
     avgServiceTime: "3.8m",
     lastActive: "5 minutes ago",
+    assignedDesk: "Desk 3",
+    deskId: 3,
   },
   {
     id: 4,
@@ -57,6 +63,8 @@ const staffMembers = [
     queuesHandled: 12,
     avgServiceTime: "6.3m",
     lastActive: "2 hours ago",
+    assignedDesk: null,
+    deskId: null,
   },
 ]
 
@@ -164,9 +172,10 @@ export default function StaffManagement() {
                   <TableHead className="min-w-48">Staff Member</TableHead>
                   <TableHead className="min-w-24">Position</TableHead>
                   <TableHead className="min-w-20">Status</TableHead>
-                  <TableHead className="min-w-32 hidden sm:table-cell">Shift</TableHead>
-                  <TableHead className="min-w-28 hidden md:table-cell">Performance</TableHead>
-                  <TableHead className="min-w-24 hidden lg:table-cell">Last Active</TableHead>
+                  <TableHead className="min-w-24 hidden sm:table-cell">Assigned Desk</TableHead>
+                  <TableHead className="min-w-32 hidden md:table-cell">Shift</TableHead>
+                  <TableHead className="min-w-28 hidden lg:table-cell">Performance</TableHead>
+                  <TableHead className="min-w-24 hidden xl:table-cell">Last Active</TableHead>
                   <TableHead className="text-right min-w-20">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -188,14 +197,24 @@ export default function StaffManagement() {
                     <TableCell>
                       <Badge className={getStatusBadge(staff.status)}>{staff.status}</Badge>
                     </TableCell>
-                    <TableCell className="text-xs hidden sm:table-cell">{staff.shift}</TableCell>
-                    <TableCell className="hidden md:table-cell">
+                    <TableCell className="hidden sm:table-cell">
+                      {staff.assignedDesk ? (
+                        <div className="flex items-center gap-1">
+                          <Monitor className="w-3 h-3 text-muted-foreground" />
+                          <span className="text-xs">{staff.assignedDesk}</span>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Unassigned</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-xs hidden md:table-cell">{staff.shift}</TableCell>
+                    <TableCell className="hidden lg:table-cell">
                       <div className="text-xs">
                         <div>{staff.queuesHandled} queues handled</div>
                         <div className="text-muted-foreground">{staff.avgServiceTime} avg time</div>
                       </div>
                     </TableCell>
-                    <TableCell className="text-xs text-muted-foreground hidden lg:table-cell">
+                    <TableCell className="text-xs text-muted-foreground hidden xl:table-cell">
                       {staff.lastActive}
                     </TableCell>
                     <TableCell className="text-right">
@@ -210,6 +229,10 @@ export default function StaffManagement() {
                           <DropdownMenuItem>
                             <Edit className="mr-2 h-4 w-4" />
                             Edit Staff
+                          </DropdownMenuItem>
+                          <DropdownMenuItem>
+                            <Monitor className="mr-2 h-4 w-4" />
+                            Assign Desk
                           </DropdownMenuItem>
                           <DropdownMenuItem>
                             <Clock className="mr-2 h-4 w-4" />

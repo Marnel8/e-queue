@@ -18,6 +18,7 @@ import {
 	BarChart3,
 	BookOpen,
 	AlertTriangle,
+	FileText,
 } from "lucide-react";
 
 const navigation = [
@@ -30,6 +31,11 @@ const navigation = [
 	},
 	{ name: "Queue Lanes", href: "/office-admin/queues", icon: BarChart3 },
 	{ name: "Logbook", href: "/office-admin/logbook", icon: BookOpen },
+	{
+		name: "Evaluation Forms",
+		href: "/office-admin/evaluation",
+		icon: FileText,
+	},
 	{
 		name: "Feedback Forms",
 		href: "/office-admin/feedback",
