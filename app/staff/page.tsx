@@ -32,6 +32,8 @@ import {
 	Download,
 	QrCode,
 	Monitor,
+	MessageSquare,
+	Star,
 } from "lucide-react";
 import QRCode from "react-qr-code";
 
@@ -128,13 +130,13 @@ export default function StaffDashboard() {
 	});
 
 	// Filter queue data by current staff's desk
-	const deskQueueData = queueData.filter(ticket => ticket.deskId === currentStaff.deskId);
+	const deskQueueData = queueData.filter(
+		(ticket) => ticket.deskId === currentStaff.deskId
+	);
 	const [currentQueue, setCurrentQueue] = useState(deskQueueData[0] || null);
 	const [queueList, setQueueList] = useState(deskQueueData.slice(1));
 	const [evaluationScanned, setEvaluationScanned] = useState(false);
 	const [isMounted, setIsMounted] = useState(false);
-	const [customRating, setCustomRating] = useState(5);
-	const [customWaitTime, setCustomWaitTime] = useState(5);
 	const [qrCodeScanned, setQrCodeScanned] = useState(false);
 	const [showImageModal, setShowImageModal] = useState(false);
 	const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -184,14 +186,34 @@ export default function StaffDashboard() {
 
 	// Available staff members for this office
 	const availableStaff = [
-		{ id: "staff-001", name: "Ana Rodriguez", status: "active", deskId: 1, deskName: "Desk 1" },
-		{ id: "staff-002", name: "Carlos Mendoza", status: "available", deskId: 2, deskName: "Desk 2" },
-		{ id: "staff-003", name: "Elena Santos", status: "available", deskId: 3, deskName: "Desk 3" },
+		{
+			id: "staff-001",
+			name: "Ana Rodriguez",
+			status: "active",
+			deskId: 1,
+			deskName: "Desk 1",
+		},
+		{
+			id: "staff-002",
+			name: "Carlos Mendoza",
+			status: "available",
+			deskId: 2,
+			deskName: "Desk 2",
+		},
+		{
+			id: "staff-003",
+			name: "Elena Santos",
+			status: "available",
+			deskId: 3,
+			deskName: "Desk 3",
+		},
 	];
 
 	// Update queue when staff changes desk
 	useEffect(() => {
-		const newDeskQueueData = queueData.filter(ticket => ticket.deskId === currentStaff.deskId);
+		const newDeskQueueData = queueData.filter(
+			(ticket) => ticket.deskId === currentStaff.deskId
+		);
 		setCurrentQueue(newDeskQueueData[0] || null);
 		setQueueList(newDeskQueueData.slice(1));
 	}, [currentStaff.deskId]);
@@ -295,173 +317,6 @@ export default function StaffDashboard() {
 		}
 	};
 
-
-
-	const simulateCustomerEvaluation = (evaluationType: string) => {
-		if (typeof window === "undefined") return;
-
-		const evaluation = {
-			id: Date.now(),
-			type: "customer_evaluation",
-			scenario: evaluationType,
-			when: new Date().toISOString(),
-			completedAt: new Date().toISOString(), // Add completion timestamp
-			ticketNumber: currentQueue?.ticketNumber || "A001",
-			customerName: currentQueue?.customerName || "Test Customer",
-			office: currentStaff.office,
-			service: currentQueue?.service || "General Service",
-			rating: getRatingForScenario(evaluationType),
-			waitTime: getWaitTimeForScenario(evaluationType),
-			comment: getCommentForScenario(evaluationType),
-			staffId: currentStaff.id,
-			staffName: currentStaff.name,
-		};
-
-		try {
-			const existingEvaluations =
-				localStorage.getItem("equeue_evaluations") || "[]";
-			const evaluations = JSON.parse(existingEvaluations);
-			evaluations.push(evaluation);
-			localStorage.setItem("equeue_evaluations", JSON.stringify(evaluations));
-
-			// Set evaluation completion flag to trigger automatic next action
-			if (currentQueue) {
-				localStorage.setItem(
-					`equeue_evaluation_${currentQueue.ticketNumber}`,
-					JSON.stringify({
-						completedAt: new Date().toISOString(),
-						ticketNumber: currentQueue.ticketNumber,
-						customerName: currentQueue.customerName,
-					})
-				);
-			}
-
-			alert(
-				`Customer evaluation simulation (${evaluationType.replace(
-					/_/g,
-					" "
-				)}) completed successfully!`
-			);
-		} catch (error) {
-			localStorage.setItem("equeue_evaluations", JSON.stringify([evaluation]));
-			alert(
-				`Customer evaluation simulation (${evaluationType.replace(
-					/_/g,
-					" "
-				)}) completed successfully!`
-			);
-		}
-	};
-
-	const simulateCustomCustomerEvaluation = () => {
-		if (typeof window === "undefined") return;
-
-		const evaluation = {
-			id: Date.now(),
-			type: "customer_evaluation",
-			scenario: "custom_evaluation",
-			when: new Date().toISOString(),
-			completedAt: new Date().toISOString(), // Add completion timestamp
-			ticketNumber: currentQueue?.ticketNumber || "A001",
-			customerName: currentQueue?.customerName || "Test Customer",
-			office: currentStaff.office,
-			service: currentQueue?.service || "General Service",
-			rating: customRating,
-			waitTime: customWaitTime,
-			comment: `Custom evaluation with service rating: ${customRating}/5, wait time rating: ${customWaitTime}/5`,
-			staffId: currentStaff.id,
-			staffName: currentStaff.name,
-		};
-
-		try {
-			const existingEvaluations =
-				localStorage.getItem("equeue_evaluations") || "[]";
-			const evaluations = JSON.parse(existingEvaluations);
-			evaluations.push(evaluation);
-			localStorage.setItem("equeue_evaluations", JSON.stringify(evaluations));
-
-			// Set evaluation completion flag to trigger automatic next action
-			if (currentQueue) {
-				localStorage.setItem(
-					`equeue_evaluation_${currentQueue.ticketNumber}`,
-					JSON.stringify({
-						completedAt: new Date().toISOString(),
-						ticketNumber: currentQueue.ticketNumber,
-						customerName: currentQueue.customerName,
-					})
-				);
-			}
-
-			alert("Custom customer evaluation simulation completed successfully!");
-		} catch (error) {
-			localStorage.setItem("equeue_evaluations", JSON.stringify([evaluation]));
-			alert("Custom customer evaluation simulation completed successfully!");
-		}
-	};
-
-	const getRatingForScenario = (scenario: string) => {
-		switch (scenario) {
-			case "excellent_service":
-				return 5;
-			case "good_service":
-				return 4;
-			case "average_service":
-				return 3;
-			case "poor_service":
-				return 2;
-			case "with_complaint":
-				return 1;
-			case "no_evaluation":
-				return 0;
-			default:
-				return 3;
-		}
-	};
-
-	const getWaitTimeForScenario = (scenario: string) => {
-		switch (scenario) {
-			case "excellent_service":
-				return 5;
-			case "good_service":
-				return 4;
-			case "average_service":
-				return 3;
-			case "poor_service":
-				return 2;
-			case "with_complaint":
-				return 1;
-			case "no_evaluation":
-				return 0;
-			default:
-				return 3;
-		}
-	};
-
-	const getCommentForScenario = (scenario: string) => {
-		switch (scenario) {
-			case "excellent_service":
-				return "Outstanding service quality and efficiency";
-			case "good_service":
-				return "Good service with room for minor improvements";
-			case "average_service":
-				return "Standard service quality, meets expectations";
-			case "poor_service":
-				return "Below average service quality, needs improvement";
-			case "with_complaint":
-				return "Service issues encountered, formal complaint filed";
-			case "no_evaluation":
-				return "Customer chose not to provide evaluation";
-			default:
-				return "Standard evaluation submitted";
-		}
-	};
-
-	const clearAllEvaluations = () => {
-		if (typeof window === "undefined") return;
-		localStorage.removeItem("equeue_evaluations");
-		alert("All evaluations cleared successfully!");
-	};
-
 	// Image viewer functions
 	const openImageModal = (imageUrl: string) => {
 		setSelectedImage(imageUrl);
@@ -474,9 +329,9 @@ export default function StaffDashboard() {
 	};
 
 	const downloadImage = (imageUrl: string, customerName: string) => {
-		const link = document.createElement('a');
+		const link = document.createElement("a");
 		link.href = imageUrl;
-		link.download = `priority-lane-${customerName.replace(/\s+/g, '-')}.jpg`;
+		link.download = `priority-lane-${customerName.replace(/\s+/g, "-")}.jpg`;
 		document.body.appendChild(link);
 		link.click();
 		document.body.removeChild(link);
@@ -657,7 +512,9 @@ export default function StaffDashboard() {
 						<CardContent className="p-4">
 							<div className="flex items-center justify-between">
 								<div>
-									<p className="text-sm text-gray-600">In Queue ({currentStaff.deskName})</p>
+									<p className="text-sm text-gray-600">
+										In Queue ({currentStaff.deskName})
+									</p>
 									<p className="text-2xl font-bold text-[#071952]">
 										{queueList.length}
 									</p>
@@ -768,7 +625,7 @@ export default function StaffDashboard() {
 												Priority Customer
 											</Badge>
 										</div>
-										
+
 										{currentQueue.priorityLaneImage ? (
 											<div className="space-y-3">
 												<div className="relative group">
@@ -776,7 +633,9 @@ export default function StaffDashboard() {
 														src={currentQueue.priorityLaneImage}
 														alt={`Priority lane image for ${currentQueue.customerName}`}
 														className="w-full h-48 object-cover rounded-lg border-2 border-amber-200 cursor-pointer transition-transform duration-200 hover:scale-105"
-														onClick={() => openImageModal(currentQueue.priorityLaneImage!)}
+														onClick={() =>
+															openImageModal(currentQueue.priorityLaneImage!)
+														}
 													/>
 													<div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
 														<Eye className="w-8 h-8 text-white" />
@@ -784,7 +643,9 @@ export default function StaffDashboard() {
 												</div>
 												<div className="flex gap-2">
 													<Button
-														onClick={() => openImageModal(currentQueue.priorityLaneImage!)}
+														onClick={() =>
+															openImageModal(currentQueue.priorityLaneImage!)
+														}
 														variant="outline"
 														className="border-amber-300 text-amber-700 hover:bg-amber-50"
 													>
@@ -792,7 +653,12 @@ export default function StaffDashboard() {
 														View Full Size
 													</Button>
 													<Button
-														onClick={() => downloadImage(currentQueue.priorityLaneImage!, currentQueue.customerName)}
+														onClick={() =>
+															downloadImage(
+																currentQueue.priorityLaneImage!,
+																currentQueue.customerName
+															)
+														}
 														variant="outline"
 														className="border-amber-300 text-amber-700 hover:bg-amber-50"
 													>
@@ -801,16 +667,20 @@ export default function StaffDashboard() {
 													</Button>
 												</div>
 												<p className="text-sm text-amber-700">
-													This customer has priority access and uploaded an image during booking.
-													Click to view full size or download for reference.
+													This customer has priority access and uploaded an
+													image during booking. Click to view full size or
+													download for reference.
 												</p>
 											</div>
 										) : (
 											<div className="text-center py-6">
 												<ImageIcon className="w-12 h-12 text-amber-400 mx-auto mb-3" />
-												<p className="text-amber-600 font-medium">No Image Uploaded</p>
+												<p className="text-amber-600 font-medium">
+													No Image Uploaded
+												</p>
 												<p className="text-sm text-amber-500">
-													This priority customer did not upload an image during booking.
+													This priority customer did not upload an image during
+													booking.
 												</p>
 											</div>
 										)}
@@ -860,10 +730,11 @@ export default function StaffDashboard() {
 												📱 Customer Evaluation QR Code
 											</h4>
 											<p className="text-blue-700">
-												Show this QR code to {currentQueue.customerName} after completing their service
+												Show this QR code to {currentQueue.customerName} after
+												completing their service
 											</p>
 										</div>
-										
+
 										<div className="flex justify-center">
 											<div className="bg-white p-8 rounded-xl border-4 border-blue-200 shadow-lg">
 												<QRCode
@@ -883,7 +754,7 @@ export default function StaffDashboard() {
 												/>
 											</div>
 										</div>
-										
+
 										<div className="text-center mt-4">
 											<p className="text-sm text-blue-700 font-medium">
 												{currentQueue.customerName} - {currentQueue.service}
@@ -893,8 +764,10 @@ export default function StaffDashboard() {
 											</p>
 											<div className="mt-3 p-3 bg-blue-100 border border-blue-300 rounded-lg max-w-md mx-auto">
 												<p className="text-xs text-blue-800">
-													<strong>Instructions:</strong> Customer can scan this QR code with their phone to submit a service evaluation.
-													The evaluation will automatically include their ticket and service information.
+													<strong>Instructions:</strong> Customer can scan this
+													QR code with their phone to submit a service
+													evaluation. The evaluation will automatically include
+													their ticket and service information.
 												</p>
 											</div>
 										</div>
@@ -940,14 +813,15 @@ export default function StaffDashboard() {
 												<p className="text-sm text-muted-foreground truncate">
 													{customer.service}
 												</p>
-												{customer.priority === "Priority" && customer.priorityLaneImage && (
-													<div className="flex items-center gap-2 mt-1">
-														<ImageIcon className="w-3 h-3 text-amber-600" />
-														<span className="text-xs text-amber-600 font-medium">
-															Has Priority Image
-														</span>
-													</div>
-												)}
+												{customer.priority === "Priority" &&
+													customer.priorityLaneImage && (
+														<div className="flex items-center gap-2 mt-1">
+															<ImageIcon className="w-3 h-3 text-amber-600" />
+															<span className="text-xs text-amber-600 font-medium">
+																Has Priority Image
+															</span>
+														</div>
+													)}
 											</div>
 										</div>
 										<div className="text-left sm:text-right flex-shrink-0">
@@ -1003,112 +877,286 @@ export default function StaffDashboard() {
 					</CardContent>
 				</Card>
 
-				{/* Customer Evaluation Form */}
-				<Card className="border-2 border-green-200 bg-gradient-to-br from-green-50 to-white">
-					<CardHeader className="pb-4">
-						<CardTitle className="text-lg font-semibold text-green-800 flex items-center gap-2">
-							<CheckCircle className="w-5 h-5 text-green-600" />
-							Customer Evaluation Form
+				{/* Feedback Results */}
+				<Card>
+					<CardHeader>
+						<CardTitle className="flex items-center gap-2">
+							<MessageSquare className="w-5 h-5 text-purple-600" />
+							Customer Feedback Results
 						</CardTitle>
-						<CardDescription className="text-green-700">
-							Submit customer evaluation with auto-filled customer information
+						<CardDescription>
+							Your recent customer feedback and ratings
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						{currentQueue ? (
-							<div className="space-y-6">
-								{/* Customer Information Display */}
-								<div className="bg-white p-4 rounded-lg border-2 border-green-200">
-									<h4 className="font-semibold mb-3 text-green-800">
-										Customer Information (Auto-filled)
-									</h4>
-									<div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-										<div>
-											<label className="block text-sm font-medium text-green-700 mb-1">
-												Ticket Number
-											</label>
-											<input
-												type="text"
-												value={currentQueue.ticketNumber}
-												readOnly
-												className="w-full p-2 bg-green-50 border border-green-200 rounded-md text-green-800 font-medium"
-											/>
-										</div>
-										<div>
-											<label className="block text-sm font-medium text-green-700 mb-1">
-												Customer Name
-											</label>
-											<input
-												type="text"
-												value={currentQueue.customerName}
-												readOnly
-												className="w-full p-2 bg-green-50 border border-green-200 rounded-md text-green-800 font-medium"
-											/>
-										</div>
-										<div>
-											<label className="block text-sm font-medium text-green-700 mb-1">
-												Service
-											</label>
-											<input
-												type="text"
-												value={currentQueue.service}
-												readOnly
-												className="w-full p-2 bg-green-50 border border-green-200 rounded-md text-green-800 font-medium"
-											/>
-										</div>
-										<div>
-											<label className="block text-sm font-medium text-green-700 mb-1">
-												Office
-											</label>
-											<input
-												type="text"
-												value={currentStaff.office}
-												readOnly
-												className="w-full p-2 bg-green-50 border border-green-200 rounded-md text-green-800 font-medium"
-											/>
-										</div>
-									</div>
-								</div>
-
-								{/* Evaluation Actions */}
-								<div className="bg-white p-4 rounded-lg border-2 border-green-200">
-									<h4 className="font-semibold mb-3 text-green-800">
-										Submit Evaluation
-									</h4>
-									<p className="text-sm text-green-700 mb-4">
-										Customer evaluation will be submitted with the auto-filled information above.
+						<div className="space-y-6">
+							{/* Feedback Statistics */}
+							<div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+								<div className="text-center">
+									<div className="text-2xl font-bold text-purple-600">127</div>
+									<p className="text-xs text-muted-foreground">
+										Total Feedback
 									</p>
-									<div className="flex gap-3">
-										<Button
-											onClick={() => simulateCustomerEvaluation("excellent_service")}
-											className="bg-green-600 hover:bg-green-700 text-white"
-										>
-											<CheckCircle className="w-4 h-4 mr-2" />
-											Submit Positive Evaluation
-										</Button>
-										<Button
-											onClick={() => simulateCustomerEvaluation("average_service")}
-											variant="outline"
-											className="border-green-300 text-green-700 hover:bg-green-50"
-										>
-											Submit Average Evaluation
-										</Button>
-									</div>
+								</div>
+								<div className="text-center">
+									<div className="text-2xl font-bold text-yellow-600">4.7</div>
+									<p className="text-xs text-muted-foreground">Your Rating</p>
+								</div>
+								<div className="text-center">
+									<div className="text-2xl font-bold text-green-600">89%</div>
+									<p className="text-xs text-muted-foreground">Positive</p>
+								</div>
+								<div className="text-center">
+									<div className="text-2xl font-bold text-blue-600">4.3</div>
+									<p className="text-xs text-muted-foreground">Overall Avg</p>
 								</div>
 							</div>
-						) : (
-							<div className="text-center py-8">
-								<AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-								<p className="text-muted-foreground">No current customer to evaluate</p>
+
+							{/* Recent Feedback */}
+							<div className="space-y-3">
+								<h4 className="font-semibold text-sm text-muted-foreground">
+									Recent Feedback
+								</h4>
+								<div className="space-y-3 max-h-64 overflow-y-auto">
+									{[
+										{
+											id: 1,
+											customerName: "Juan Dela Cruz",
+											service: "Transcript Request",
+											rating: 5,
+											comment:
+												"Very efficient service! Ana was very helpful and the process was quick. Thank you!",
+											date: "2024-01-15 10:30 AM",
+											sentiment: "positive",
+										},
+										{
+											id: 2,
+											customerName: "Maria Santos",
+											service: "Certificate Issuance",
+											rating: 4,
+											comment:
+												"Good service overall, but the waiting time could be improved. Staff was friendly though.",
+											date: "2024-01-15 09:45 AM",
+											sentiment: "positive",
+										},
+										{
+											id: 3,
+											customerName: "Ana Rodriguez",
+											service: "Grade Verification",
+											rating: 5,
+											comment:
+												"Perfect service! Very quick and professional. The staff explained everything clearly.",
+											date: "2024-01-14 03:15 PM",
+											sentiment: "positive",
+										},
+									].map((feedback) => (
+										<div
+											key={feedback.id}
+											className="border rounded-lg p-3 space-y-2 bg-gray-50/50"
+										>
+											<div className="flex items-center justify-between">
+												<div className="flex items-center gap-2">
+													<div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+														<MessageSquare className="w-4 h-4 text-primary" />
+													</div>
+													<div>
+														<p className="font-medium text-sm">
+															{feedback.customerName}
+														</p>
+														<p className="text-xs text-muted-foreground">
+															{feedback.service}
+														</p>
+													</div>
+												</div>
+												<div className="text-right">
+													<div className="flex items-center gap-1 mb-1">
+														{Array.from({ length: 5 }).map((_, i) => (
+															<Star
+																key={i}
+																className={`w-3 h-3 ${
+																	i < feedback.rating
+																		? "fill-yellow-400 text-yellow-400"
+																		: "text-gray-300"
+																}`}
+															/>
+														))}
+													</div>
+													<Badge
+														className={
+															feedback.sentiment === "positive"
+																? "bg-green-100 text-green-800 text-xs"
+																: "bg-gray-100 text-gray-800 text-xs"
+														}
+													>
+														{feedback.sentiment}
+													</Badge>
+												</div>
+											</div>
+											<p className="text-xs text-muted-foreground pl-10">
+												{feedback.comment}
+											</p>
+											<div className="flex items-center justify-between pl-10">
+												<span className="text-xs text-muted-foreground">
+													{feedback.date}
+												</span>
+											</div>
+										</div>
+									))}
+								</div>
 							</div>
-						)}
+
+							{/* View All Feedback Button */}
+							<div className="text-center pt-2">
+								<Button variant="outline" size="sm" className="bg-transparent">
+									<MessageSquare className="w-4 h-4 mr-2" />
+									View All Feedback
+								</Button>
+							</div>
+						</div>
 					</CardContent>
 				</Card>
 
+				{/* Feedback Results */}
+				<Card>
+					<CardHeader>
+						<CardTitle className="flex items-center gap-2">
+							<MessageSquare className="w-5 h-5 text-purple-600" />
+							Customer Feedback Results
+						</CardTitle>
+						<CardDescription>
+							Your recent customer feedback and ratings
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<div className="space-y-6">
+							{/* Feedback Statistics */}
+							<div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+								<div className="text-center">
+									<div className="text-2xl font-bold text-purple-600">127</div>
+									<p className="text-xs text-muted-foreground">
+										Total Feedback
+									</p>
+								</div>
+								<div className="text-center">
+									<div className="text-2xl font-bold text-yellow-600">4.7</div>
+									<p className="text-xs text-muted-foreground">Your Rating</p>
+								</div>
+								<div className="text-center">
+									<div className="text-2xl font-bold text-green-600">89%</div>
+									<p className="text-xs text-muted-foreground">Positive</p>
+								</div>
+								<div className="text-center">
+									<div className="text-2xl font-bold text-blue-600">4.3</div>
+									<p className="text-xs text-muted-foreground">Overall Avg</p>
+								</div>
+							</div>
 
+							{/* Recent Feedback */}
+							<div className="space-y-3">
+								<h4 className="font-semibold text-sm text-muted-foreground">
+									Recent Feedback
+								</h4>
+								<div className="space-y-3 max-h-64 overflow-y-auto">
+									{[
+										{
+											id: 1,
+											customerName: "Juan Dela Cruz",
+											service: "Transcript Request",
+											rating: 5,
+											comment:
+												"Very efficient service! Ana was very helpful and the process was quick. Thank you!",
+											date: "2024-01-15 10:30 AM",
+											sentiment: "positive",
+										},
+										{
+											id: 2,
+											customerName: "Maria Santos",
+											service: "Certificate Issuance",
+											rating: 4,
+											comment:
+												"Good service overall, but the waiting time could be improved. Staff was friendly though.",
+											date: "2024-01-15 09:45 AM",
+											sentiment: "positive",
+										},
+										{
+											id: 3,
+											customerName: "Ana Rodriguez",
+											service: "Grade Verification",
+											rating: 5,
+											comment:
+												"Perfect service! Very quick and professional. The staff explained everything clearly.",
+											date: "2024-01-14 03:15 PM",
+											sentiment: "positive",
+										},
+									].map((feedback) => (
+										<div
+											key={feedback.id}
+											className="border rounded-lg p-3 space-y-2 bg-gray-50/50"
+										>
+											<div className="flex items-center justify-between">
+												<div className="flex items-center gap-2">
+													<div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+														<MessageSquare className="w-4 h-4 text-primary" />
+													</div>
+													<div>
+														<p className="font-medium text-sm">
+															{feedback.customerName}
+														</p>
+														<p className="text-xs text-muted-foreground">
+															{feedback.service}
+														</p>
+													</div>
+												</div>
+												<div className="text-right">
+													<div className="flex items-center gap-1 mb-1">
+														{Array.from({ length: 5 }).map((_, i) => (
+															<Star
+																key={i}
+																className={`w-3 h-3 ${
+																	i < feedback.rating
+																		? "fill-yellow-400 text-yellow-400"
+																		: "text-gray-300"
+																}`}
+															/>
+														))}
+													</div>
+													<Badge
+														className={
+															feedback.sentiment === "positive"
+																? "bg-green-100 text-green-800 text-xs"
+																: "bg-gray-100 text-gray-800 text-xs"
+														}
+													>
+														{feedback.sentiment}
+													</Badge>
+												</div>
+											</div>
+											<p className="text-xs text-muted-foreground pl-10">
+												{feedback.comment}
+											</p>
+											<div className="flex items-center justify-between pl-10">
+												<span className="text-xs text-muted-foreground">
+													{feedback.date}
+												</span>
+											</div>
+										</div>
+									))}
+								</div>
+							</div>
+
+							{/* View All Feedback Button */}
+							<div className="text-center pt-2">
+								<Button variant="outline" size="sm" className="bg-transparent">
+									<MessageSquare className="w-4 h-4 mr-2" />
+									View All Feedback
+								</Button>
+							</div>
+						</div>
+					</CardContent>
+				</Card>
 			</div>
 
-		{/* Image Modal */}
+			{/* Image Modal */}
 			{showImageModal && selectedImage && (
 				<div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
 					<div className="relative max-w-4xl max-h-full">
@@ -1119,7 +1167,12 @@ export default function StaffDashboard() {
 						/>
 						<div className="absolute top-4 right-4 flex gap-2">
 							<Button
-								onClick={() => downloadImage(selectedImage, currentQueue?.customerName || 'customer')}
+								onClick={() =>
+									downloadImage(
+										selectedImage,
+										currentQueue?.customerName || "customer"
+									)
+								}
 								variant="outline"
 								className="bg-white/90 hover:bg-white text-gray-800 border-gray-300"
 							>

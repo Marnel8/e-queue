@@ -56,7 +56,6 @@ const upcomingTickets: any[] = [];
 export default function CustomerDashboard() {
 	const [showCancelDialog, setShowCancelDialog] = useState(false);
 	const [showEvaluationForm, setShowEvaluationForm] = useState(false);
-	const [transactionCompleted, setTransactionCompleted] = useState(false);
 	const [hasPendingEvaluation, setHasPendingEvaluation] = useState(false);
 	const [cancelReason, setCancelReason] = useState("");
 	const [showQRScanner, setShowQRScanner] = useState(false);
@@ -91,12 +90,11 @@ export default function CustomerDashboard() {
 			// Parse the QR code result
 			const qrData = JSON.parse(result);
 			console.log("QR Scan Result:", qrData);
-			
+
 			// Handle different types of QR codes
 			if (qrData.type === "service_evaluation") {
 				// If it's an evaluation QR code, open the evaluation form
 				setShowEvaluationForm(true);
-				setTransactionCompleted(true);
 			} else if (qrData.type === "ticket_info") {
 				// If it's ticket info, you could display ticket details
 				console.log("Ticket info scanned:", qrData);
@@ -117,7 +115,6 @@ export default function CustomerDashboard() {
 		// TODO: Implement evaluation submission logic
 		console.log("Submitting evaluation:", evaluationData);
 		setShowEvaluationForm(false);
-		setTransactionCompleted(false);
 
 		// Clear pending evaluation state
 		if (typeof window !== "undefined") {
@@ -134,43 +131,6 @@ export default function CustomerDashboard() {
 			staffCourtesy: 5,
 			overallExperience: 5,
 		});
-	};
-
-	const handleTransactionComplete = () => {
-		setTransactionCompleted(true);
-		setShowEvaluationForm(true);
-	};
-
-	// Simulate evaluation non-compliance: user skips evaluation after completion
-	const handleSkipEvaluation = () => {
-		setShowEvaluationForm(false);
-		setTransactionCompleted(false);
-		if (typeof window !== "undefined") {
-			localStorage.setItem("equeue_hasPendingEvaluation", "true");
-			const raw = localStorage.getItem("equeue_violations") || "[]";
-			try {
-				const list = JSON.parse(raw);
-				list.push({
-					id: Date.now(),
-					type: "evaluation_non_compliance",
-					when: new Date().toISOString(),
-					detail: "Evaluation not completed after transaction",
-				});
-				localStorage.setItem("equeue_violations", JSON.stringify(list));
-			} catch {
-				localStorage.setItem(
-					"equeue_violations",
-					JSON.stringify([
-						{
-							id: Date.now(),
-							type: "evaluation_non_compliance",
-							when: new Date().toISOString(),
-							detail: "Evaluation not completed after transaction",
-						},
-					])
-				);
-			}
-		}
 	};
 
 	// Generate QR code data for evaluation
@@ -402,7 +362,7 @@ export default function CustomerDashboard() {
 									<QrCode className="w-5 h-5 mr-2" />
 									Scan QR Code
 								</Button>
-								
+
 								{/* Other Actions */}
 								<div className="flex flex-wrap gap-3">
 									<Button
@@ -432,7 +392,9 @@ export default function CustomerDashboard() {
 								</div>
 								<div className="space-y-2 text-sm text-gray-800">
 									<p className="font-medium">• Currently serving: A012</p>
-									<p className="font-medium">• Staff: {currentTicket.assignedStaff}</p>
+									<p className="font-medium">
+										• Staff: {currentTicket.assignedStaff}
+									</p>
 									<p className="font-medium">
 										• Average service time: 6 minutes
 									</p>
@@ -508,228 +470,11 @@ export default function CustomerDashboard() {
 					</Card>
 				)}
 
-				{/* Transaction Completion & Evaluation Flow */}
-				{transactionCompleted ? (
-					<Card className="border-2 border-green-200 bg-green-50">
-						<CardHeader>
-							<CardTitle className="flex items-center gap-2 text-green-800">
-								<CheckCircle className="w-5 h-5 text-green-600" />
-								Step 5: Service Evaluation
-							</CardTitle>
-							<CardDescription className="text-green-700">
-								Transaction completed! This is the final step - please rate your
-								experience to complete your service journey.
-							</CardDescription>
-						</CardHeader>
-						<CardContent>
-							<div className="text-center py-6">
-								<div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-									<CheckCircle className="w-10 h-10 text-green-600" />
-								</div>
-								<h3 className="text-lg font-semibold mb-2 text-green-800">
-									Service Successfully Completed
-								</h3>
-								<p className="text-green-700 mb-4">
-									Your transaction has been processed. We'd love to hear about
-									your experience!
-								</p>
-
-								{/* QR Code Display for Immediate Evaluation */}
-								<div className="mb-6 p-4 bg-white rounded-lg border-2 border-green-200">
-									<h4 className="font-semibold mb-3 text-green-800">
-										Scan QR Code for Evaluation
-									</h4>
-									<div className="text-center">
-										<div className="w-48 h-48 bg-white rounded-lg border-2 border-green-300 mx-auto mb-4 flex items-center justify-center p-4">
-											<QRCode
-												value={generateQRCodeData()}
-												size={160}
-												level="H"
-											/>
-										</div>
-										<p className="text-sm text-green-700 font-medium mb-2">
-											Service Evaluation QR Code
-										</p>
-										<p className="text-xs text-green-600 mb-3">
-											Scan this QR code to complete your service evaluation
-										</p>
-									</div>
-								</div>
-
-								<Button
-									onClick={() => setShowEvaluationForm(true)}
-									className="bg-green-600 hover:bg-green-700 text-white font-medium px-6 py-2"
-								>
-									<Star className="w-4 h-4 mr-2" />
-									Rate Your Experience
-								</Button>
-							</div>
-						</CardContent>
-					</Card>
-				) : (
-					<Card className="border-2 border-[#37B7C3] bg-gradient-to-br from-[#EBF4F6] to-white">
-						<CardHeader>
-							<CardTitle className="flex items-center gap-2 text-[#071952]">
-								<MessageSquare className="w-5 h-5 text-[#088395]" />
-								Service Evaluation
-							</CardTitle>
-							<CardDescription className="text-gray-700">
-								Help us improve by rating your recent service experience
-							</CardDescription>
-						</CardHeader>
-						<CardContent>
-							{!showEvaluationForm ? (
-								<div className="text-center py-8">
-									<Star className="w-16 h-16 text-[#088395] mx-auto mb-4" />
-									<h3 className="text-xl font-semibold mb-2 text-[#071952]">
-										Rate Your Experience
-									</h3>
-									<p className="text-gray-700 mb-6">
-										Your feedback helps us provide better service to all
-										customers
-									</p>
-									<div className="space-y-3">
-										<Button
-											onClick={() => setShowEvaluationForm(true)}
-											className="gradient-primary text-white font-medium px-6 py-2"
-										>
-											<MessageSquare className="w-4 h-4 mr-2" />
-											Start Evaluation
-										</Button>
-										<Button
-											onClick={handleSkipEvaluation}
-											variant="outline"
-											className="text-red-700 border-red-300 hover:bg-red-50"
-										>
-											Skip Evaluation (Simulate Non-Compliance)
-										</Button>
-										<div className="text-xs text-gray-500">
-											Or simulate a completed transaction to see the automatic
-											flow
-										</div>
-										<Button
-											onClick={handleTransactionComplete}
-											variant="outline"
-											size="sm"
-											className="text-[#071952] border-[#37B7C3] hover:bg-[#EBF4F6]"
-										>
-											Simulate Transaction Complete
-										</Button>
-									</div>
-								</div>
-							) : (
-								<div className="space-y-6">
-									<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-										{/* Service Quality */}
-										<div className="space-y-3">
-											<Label className="text-sm font-medium text-[#071952]">
-												Service Quality
-											</Label>
-											<div className="flex items-center justify-between">
-												{renderStars(evaluationData.serviceQuality, (value) =>
-													handleRatingChange("serviceQuality", value)
-												)}
-												<span className="text-sm text-gray-600 font-medium">
-													{evaluationData.serviceQuality}/5
-												</span>
-											</div>
-										</div>
-
-										{/* Waiting Time */}
-										<div className="space-y-3">
-											<Label className="text-sm font-medium text-[#071952]">
-												Waiting Time
-											</Label>
-											<div className="flex items-center justify-between">
-												{renderStars(evaluationData.waitingTime, (value) =>
-													handleRatingChange("waitingTime", value)
-												)}
-												<span className="text-sm text-gray-600 font-medium">
-													{evaluationData.waitingTime}/5
-												</span>
-											</div>
-										</div>
-
-										{/* Staff Courtesy */}
-										<div className="space-y-3">
-											<Label className="text-sm font-medium text-[#071952]">
-												Staff Courtesy
-											</Label>
-											<div className="flex items-center justify-between">
-												{renderStars(evaluationData.staffCourtesy, (value) =>
-													handleRatingChange("staffCourtesy", value)
-												)}
-												<span className="text-sm text-gray-600 font-medium">
-													{evaluationData.staffCourtesy}/5
-												</span>
-											</div>
-										</div>
-
-										{/* Overall Experience */}
-										<div className="space-y-3">
-											<Label className="text-sm font-medium text-[#071952]">
-												Overall Experience
-											</Label>
-											<div className="flex items-center justify-between">
-												{renderStars(
-													evaluationData.overallExperience,
-													(value) =>
-														handleRatingChange("overallExperience", value)
-												)}
-												<span className="text-sm text-gray-600 font-medium">
-													{evaluationData.overallExperience}/5
-												</span>
-											</div>
-										</div>
-									</div>
-
-									{/* Additional Comments */}
-									<div className="space-y-3">
-										<Label className="text-sm font-medium text-[#071952]">
-											Additional Comments (Optional)
-										</Label>
-										<Textarea
-											placeholder="Share your thoughts about the service, staff, or any suggestions for improvement..."
-											value={evaluationData.comment}
-											onChange={(e) =>
-												setEvaluationData((prev) => ({
-													...prev,
-													comment: e.target.value,
-												}))
-											}
-											className="min-h-[100px] border-2 border-[#37B7C3] focus:border-[#088395]"
-											suppressHydrationWarning
-										/>
-									</div>
-
-									{/* Action Buttons */}
-									<div className="flex gap-3">
-										<Button
-											onClick={() => setShowEvaluationForm(false)}
-											variant="outline"
-											className="flex-1 border-2 border-[#37B7C3] text-[#071952] hover:bg-[#EBF4F6]"
-										>
-											Cancel
-										</Button>
-										<Button
-											onClick={handleEvaluationSubmit}
-											className="flex-1 gradient-primary text-white font-medium"
-										>
-											<Send className="w-4 h-4 mr-2" />
-											Submit Evaluation
-										</Button>
-									</div>
-								</div>
-							)}
-						</CardContent>
-					</Card>
-				)}
-
 				{/* Account Violations */}
 				<ViolationsDisplay userRole="customer" showActions={false} />
 
 				{/* Quick Actions */}
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 					<Card className="hover:shadow-xl transition-all duration-300 cursor-pointer border-2 border-[#37B7C3] hover:border-[#088395] bg-gradient-to-br from-white to-[#EBF4F6]">
 						<CardContent className="p-6 text-center">
 							<Calendar className="w-12 h-12 text-[#088395] mx-auto mb-4" />
@@ -762,18 +507,6 @@ export default function CustomerDashboard() {
 							</h3>
 							<p className="text-sm text-gray-700">
 								Check current queue lengths
-							</p>
-						</CardContent>
-					</Card>
-
-					<Card className="hover:shadow-xl transition-all duration-300 cursor-pointer border-2 border-[#37B7C3] hover:border-[#088395] bg-gradient-to-br from-white to-[#EBF4F6]">
-						<CardContent className="p-6 text-center">
-							<MessageSquare className="w-12 h-12 text-[#088395] mx-auto mb-4" />
-							<h3 className="font-semibold mb-2 text-[#071952]">
-								Service Evaluation
-							</h3>
-							<p className="text-sm text-gray-700">
-								Rate your service experience
 							</p>
 						</CardContent>
 					</Card>

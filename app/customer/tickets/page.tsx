@@ -138,7 +138,7 @@ export default function MyTickets() {
 		>
 			<div className="space-y-6">
 				{/* Ticket Statistics */}
-				<div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+				<div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
 					<Card>
 						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 							<CardTitle className="text-xs sm:text-sm font-medium">
@@ -156,7 +156,7 @@ export default function MyTickets() {
 						</CardContent>
 					</Card>
 
-					<Card>
+					{/* <Card>
 						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 							<CardTitle className="text-xs sm:text-sm font-medium">
 								Upcoming
@@ -171,7 +171,7 @@ export default function MyTickets() {
 								Scheduled appointments
 							</p>
 						</CardContent>
-					</Card>
+					</Card> */}
 
 					<Card>
 						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -305,7 +305,7 @@ export default function MyTickets() {
 						)}
 
 						{/* Upcoming Tickets */}
-						{upcomingTickets.length > 0 && (
+						{/* {upcomingTickets.length > 0 && (
 							<Card>
 								<CardHeader>
 									<CardTitle className="flex items-center gap-2">
@@ -352,7 +352,7 @@ export default function MyTickets() {
 									</div>
 								</CardContent>
 							</Card>
-						)}
+						)} */}
 
 						{activeTickets.length === 0 && upcomingTickets.length === 0 && (
 							<Card>
