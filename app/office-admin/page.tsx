@@ -7,19 +7,14 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import {
 	Users,
-	Clock,
-	TrendingUp,
 	MessageSquare,
 	Star,
 	ThumbsUp,
 	ThumbsDown,
 	AlertCircle,
-	Monitor,
-	UserCheck,
-	Coffee,
+	TrendingUp,
 } from "lucide-react";
 import { ViolationsDisplay } from "@/components/ui/violations-display";
 
@@ -88,45 +83,6 @@ const recentFeedback = [
 	},
 ];
 
-const deskData = [
-	{
-		id: 1,
-		name: "Desk 1",
-		assignedStaff: "Ana Rodriguez",
-		status: "active",
-		currentTicket: "TR-001",
-		queueLength: 3,
-		avgServiceTime: "4.2m",
-	},
-	{
-		id: 2,
-		name: "Desk 2",
-		assignedStaff: "Carlos Mendoza",
-		status: "active",
-		currentTicket: "CI-015",
-		queueLength: 5,
-		avgServiceTime: "5.1m",
-	},
-	{
-		id: 3,
-		name: "Desk 3",
-		assignedStaff: "Elena Santos",
-		status: "break",
-		currentTicket: null,
-		queueLength: 0,
-		avgServiceTime: "3.8m",
-	},
-	{
-		id: 4,
-		name: "Desk 4",
-		assignedStaff: null,
-		status: "inactive",
-		currentTicket: null,
-		queueLength: 0,
-		avgServiceTime: "0m",
-	},
-];
-
 export default function OfficeAdminDashboard() {
 	return (
 		<div className="space-y-4 sm:space-y-6">
@@ -143,29 +99,25 @@ export default function OfficeAdminDashboard() {
 			<div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
 				<Card>
 					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-						<CardTitle className="text-sm font-medium">Today's Queue</CardTitle>
+						<CardTitle className="text-sm font-medium">Total Staff</CardTitle>
 						<Users className="h-4 w-4 text-muted-foreground" />
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold">47</div>
+						<div className="text-2xl font-bold">8</div>
 						<p className="text-xs text-muted-foreground">
-							<span className="text-green-600">+8</span> from yesterday
+							<span className="text-green-600">+1</span> this month
 						</p>
 					</CardContent>
 				</Card>
 
 				<Card>
 					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-						<CardTitle className="text-sm font-medium">
-							Avg. Wait Time
-						</CardTitle>
-						<Clock className="h-4 w-4 text-muted-foreground" />
+						<CardTitle className="text-sm font-medium">Active Staff</CardTitle>
+						<Users className="h-4 w-4 text-muted-foreground" />
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold">6.2m</div>
-						<p className="text-xs text-muted-foreground">
-							<span className="text-green-600">-1.3m</span> improvement
-						</p>
+						<div className="text-2xl font-bold">6</div>
+						<p className="text-xs text-muted-foreground">2 on break</p>
 					</CardContent>
 				</Card>
 
@@ -186,95 +138,17 @@ export default function OfficeAdminDashboard() {
 
 				<Card>
 					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-						<CardTitle className="text-sm font-medium">Staff Online</CardTitle>
+						<CardTitle className="text-sm font-medium">
+							Total Services
+						</CardTitle>
 						<Users className="h-4 w-4 text-muted-foreground" />
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold">6/8</div>
-						<p className="text-xs text-muted-foreground">2 on break</p>
+						<div className="text-2xl font-bold">12</div>
+						<p className="text-xs text-muted-foreground">Active services</p>
 					</CardContent>
 				</Card>
 			</div>
-
-			{/* Desk Management */}
-			<Card>
-				<CardHeader>
-					<CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-						<Monitor className="w-4 h-4 sm:w-5 sm:h-5" />
-						Desk Management
-					</CardTitle>
-					<CardDescription className="text-xs sm:text-sm">
-						Real-time desk status and staff assignments
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-						{deskData.map((desk) => (
-							<div
-								key={desk.id}
-								className={`rounded-lg border p-4 space-y-3 ${
-									desk.status === "active"
-										? "border-green-200 bg-green-50"
-										: desk.status === "break"
-										? "border-yellow-200 bg-yellow-50"
-										: "border-gray-200 bg-gray-50"
-								}`}
-							>
-								<div className="flex items-center justify-between">
-									<h4 className="font-medium text-sm">{desk.name}</h4>
-									<Badge
-										variant={
-											desk.status === "active"
-												? "default"
-												: desk.status === "break"
-												? "secondary"
-												: "outline"
-										}
-										className="text-xs"
-									>
-										{desk.status === "active" && <UserCheck className="w-3 h-3 mr-1" />}
-										{desk.status === "break" && <Coffee className="w-3 h-3 mr-1" />}
-										{desk.status}
-									</Badge>
-								</div>
-								
-								<div className="space-y-2">
-									<div className="text-xs text-muted-foreground">
-										<span className="font-medium">Staff:</span>{" "}
-										{desk.assignedStaff || "Unassigned"}
-									</div>
-									
-									{desk.currentTicket && (
-										<div className="text-xs text-muted-foreground">
-											<span className="font-medium">Current:</span>{" "}
-											{desk.currentTicket}
-										</div>
-									)}
-									
-									<div className="text-xs text-muted-foreground">
-										<span className="font-medium">Queue:</span>{" "}
-										{desk.queueLength} tickets
-									</div>
-									
-									<div className="text-xs text-muted-foreground">
-										<span className="font-medium">Avg. Time:</span>{" "}
-										{desk.avgServiceTime}
-									</div>
-								</div>
-								
-								<Button
-									variant="outline"
-									size="sm"
-									className="w-full text-xs"
-									disabled={desk.status === "inactive"}
-								>
-									Manage Desk
-								</Button>
-							</div>
-						))}
-					</div>
-				</CardContent>
-			</Card>
 
 			<div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
 				{/* Customer Feedback Analysis */}
@@ -345,7 +219,7 @@ export default function OfficeAdminDashboard() {
 							<div className="text-center">
 								<div className="flex items-center justify-center gap-1 mb-1">
 									<MessageSquare className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
-									<span className="text-sm sm:text-lg font-bold text-gray-600">
+									<span className="text-xs sm:text-lg font-bold text-gray-600">
 										8%
 									</span>
 								</div>
@@ -433,56 +307,6 @@ export default function OfficeAdminDashboard() {
 					</CardContent>
 				</Card>
 			</div>
-
-			{/* Service Performance */}
-			<Card>
-				<CardHeader>
-					<CardTitle className="text-base sm:text-lg">
-						Service Performance
-					</CardTitle>
-					<CardDescription className="text-xs sm:text-sm">
-						Performance metrics for each service offered
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<div className="space-y-4">
-						<div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-							<div className="space-y-2">
-								<div className="flex justify-between text-sm">
-									<span>Transcript Request</span>
-									<span className="text-green-600">96%</span>
-								</div>
-								<Progress value={96} className="h-2" />
-								<p className="text-xs text-muted-foreground">
-									Avg. 4.2 min wait time
-								</p>
-							</div>
-
-							<div className="space-y-2">
-								<div className="flex justify-between text-sm">
-									<span>Certificate Issuance</span>
-									<span className="text-green-600">94%</span>
-								</div>
-								<Progress value={94} className="h-2" />
-								<p className="text-xs text-muted-foreground">
-									Avg. 6.8 min wait time
-								</p>
-							</div>
-
-							<div className="space-y-2">
-								<div className="flex justify-between text-sm">
-									<span>Enrollment Services</span>
-									<span className="text-yellow-600">87%</span>
-								</div>
-								<Progress value={87} className="h-2" />
-								<p className="text-xs text-muted-foreground">
-									Avg. 12.3 min wait time
-								</p>
-							</div>
-						</div>
-					</div>
-				</CardContent>
-			</Card>
 
 			{/* User Violations */}
 			<ViolationsDisplay userRole="office-admin" showActions={true} />

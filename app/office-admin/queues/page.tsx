@@ -75,8 +75,6 @@ export default function QueueLanesPage() {
 	];
 
 	const queueSettings = {
-		maxTicketsPerUser: 3,
-		advanceBookingDays: 7,
 		operatingHours: {
 			start: "08:00",
 			end: "17:00",
@@ -593,26 +591,6 @@ export default function QueueLanesPage() {
 								</CardDescription>
 							</CardHeader>
 							<CardContent className="space-y-4">
-								<div className="space-y-2">
-									<Label htmlFor="maxTickets">Max Tickets Per User</Label>
-									<Input
-										id="maxTickets"
-										type="number"
-										defaultValue={queueSettings.maxTicketsPerUser}
-										className="w-full"
-									/>
-								</div>
-
-								<div className="space-y-2">
-									<Label htmlFor="advanceBooking">Advance Booking (Days)</Label>
-									<Input
-										id="advanceBooking"
-										type="number"
-										defaultValue={queueSettings.advanceBookingDays}
-										className="w-full"
-									/>
-								</div>
-
 								<div className="grid grid-cols-2 gap-4">
 									<div className="space-y-2">
 										<Label htmlFor="startTime">Opening Time</Label>

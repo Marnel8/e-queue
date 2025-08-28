@@ -30,10 +30,8 @@ export default function SettingsPage() {
 			"Queue Management System for Occidental Mindoro State College",
 		maintenanceMode: false,
 		allowRegistration: true,
-		maxTicketsPerUser: 3,
 
 		// Queue Settings
-		defaultWaitTime: 15,
 		maxQueueSize: 100,
 		autoAdvanceQueue: true,
 		voiceNotifications: true,
@@ -101,31 +99,15 @@ export default function SettingsPage() {
 							</CardDescription>
 						</CardHeader>
 						<CardContent className="space-y-6">
-							<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-								<div className="space-y-2">
-									<Label htmlFor="systemName">System Name</Label>
-									<Input
-										id="systemName"
-										value={settings.systemName}
-										onChange={(e) =>
-											handleSettingChange("systemName", e.target.value)
-										}
-									/>
-								</div>
-								<div className="space-y-2">
-									<Label htmlFor="maxTickets">Max Tickets Per User</Label>
-									<Input
-										id="maxTickets"
-										type="number"
-										value={settings.maxTicketsPerUser}
-										onChange={(e) =>
-											handleSettingChange(
-												"maxTicketsPerUser",
-												Number.parseInt(e.target.value)
-											)
-										}
-									/>
-								</div>
+							<div className="space-y-2">
+								<Label htmlFor="systemName">System Name</Label>
+								<Input
+									id="systemName"
+									value={settings.systemName}
+									onChange={(e) =>
+										handleSettingChange("systemName", e.target.value)
+									}
+								/>
 							</div>
 
 							<div className="space-y-2">
@@ -186,37 +168,19 @@ export default function SettingsPage() {
 							</CardDescription>
 						</CardHeader>
 						<CardContent className="space-y-6">
-							<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-								<div className="space-y-2">
-									<Label htmlFor="defaultWaitTime">
-										Default Wait Time (minutes)
-									</Label>
-									<Input
-										id="defaultWaitTime"
-										type="number"
-										value={settings.defaultWaitTime}
-										onChange={(e) =>
-											handleSettingChange(
-												"defaultWaitTime",
-												Number.parseInt(e.target.value)
-											)
-										}
-									/>
-								</div>
-								<div className="space-y-2">
-									<Label htmlFor="maxQueueSize">Maximum Queue Size</Label>
-									<Input
-										id="maxQueueSize"
-										type="number"
-										value={settings.maxQueueSize}
-										onChange={(e) =>
-											handleSettingChange(
-												"maxQueueSize",
-												Number.parseInt(e.target.value)
-											)
-										}
-									/>
-								</div>
+							<div className="space-y-2">
+								<Label htmlFor="maxQueueSize">Maximum Queue Size</Label>
+								<Input
+									id="maxQueueSize"
+									type="number"
+									value={settings.maxQueueSize}
+									onChange={(e) =>
+										handleSettingChange(
+											"maxQueueSize",
+											Number.parseInt(e.target.value)
+										)
+									}
+								/>
 							</div>
 
 							<div className="space-y-2">

@@ -350,43 +350,43 @@ export default function StaffDashboard() {
 	if (isQueueLocked) {
 		return (
 			<div className="max-w-2xl mx-auto">
-					<Card>
-						<CardHeader className="text-center">
-							<div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-								<Shield className="w-8 h-8 text-red-600" />
+				<Card>
+					<CardHeader className="text-center">
+						<div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+							<Shield className="w-8 h-8 text-red-600" />
+						</div>
+						<CardTitle className="text-2xl">Queue Locked</CardTitle>
+						<CardDescription>
+							Another staff member is currently managing this queue
+						</CardDescription>
+					</CardHeader>
+					<CardContent className="space-y-6">
+						<div className="text-center space-y-4">
+							<p className="text-muted-foreground">
+								The queue for <strong>{currentStaff.office}</strong> is
+								currently being managed by another staff member.
+							</p>
+							<div className="flex gap-4">
+								<Button
+									onClick={() => setShowStaffSwitch(true)}
+									className="gradient-primary text-white"
+								>
+									<UserCheck className="w-4 h-4 mr-2" />
+									Switch Staff Account
+								</Button>
+								<Button
+									onClick={() => window.location.reload()}
+									variant="outline"
+								>
+									Refresh Status
+								</Button>
 							</div>
-							<CardTitle className="text-2xl">Queue Locked</CardTitle>
-							<CardDescription>
-								Another staff member is currently managing this queue
-							</CardDescription>
-						</CardHeader>
-						<CardContent className="space-y-6">
-							<div className="text-center space-y-4">
-								<p className="text-muted-foreground">
-									The queue for <strong>{currentStaff.office}</strong> is
-									currently being managed by another staff member.
-								</p>
-								<div className="flex gap-4">
-									<Button
-										onClick={() => setShowStaffSwitch(true)}
-										className="gradient-primary text-white"
-									>
-										<UserCheck className="w-4 h-4 mr-2" />
-										Switch Staff Account
-									</Button>
-									<Button
-										onClick={() => window.location.reload()}
-										variant="outline"
-									>
-										Refresh Status
-									</Button>
-								</div>
-							</div>
-						</CardContent>
-									</Card>
-		</div>
-	);
-}
+						</div>
+					</CardContent>
+				</Card>
+			</div>
+		);
+	}
 
 	return (
 		<div>
@@ -885,21 +885,21 @@ export default function StaffDashboard() {
 							{/* Feedback Statistics */}
 							<div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
 								<div className="text-center">
-									<div className="text-2xl font-bold text-purple-600">127</div>
+									<div className="text-2xl font-bold text-purple-600">345</div>
 									<p className="text-xs text-muted-foreground">
 										Total Feedback
 									</p>
 								</div>
 								<div className="text-center">
-									<div className="text-2xl font-bold text-yellow-600">4.7</div>
+									<div className="text-2xl font-bold text-yellow-600">4.6</div>
 									<p className="text-xs text-muted-foreground">Your Rating</p>
 								</div>
 								<div className="text-center">
-									<div className="text-2xl font-bold text-green-600">89%</div>
+									<div className="text-2xl font-bold text-green-600">94%</div>
 									<p className="text-xs text-muted-foreground">Positive</p>
 								</div>
 								<div className="text-center">
-									<div className="text-2xl font-bold text-blue-600">4.3</div>
+									<div className="text-2xl font-bold text-blue-600">4.6</div>
 									<p className="text-xs text-muted-foreground">Overall Avg</p>
 								</div>
 							</div>
@@ -917,168 +917,29 @@ export default function StaffDashboard() {
 											service: "Transcript Request",
 											rating: 5,
 											comment:
-												"Very efficient service! Ana was very helpful and the process was quick. Thank you!",
+												"Very efficient service! The staff was helpful and the process was quick.",
 											date: "2024-01-15 10:30 AM",
 											sentiment: "positive",
 										},
 										{
 											id: 2,
-											customerName: "Maria Santos",
+											customerName: "Maria Garcia",
 											service: "Certificate Issuance",
 											rating: 4,
 											comment:
-												"Good service overall, but the waiting time could be improved. Staff was friendly though.",
+												"Good service overall, but the waiting time could be improved.",
 											date: "2024-01-15 09:45 AM",
 											sentiment: "positive",
 										},
 										{
 											id: 3,
-											customerName: "Ana Rodriguez",
-											service: "Grade Verification",
-											rating: 5,
+											customerName: "Pedro Santos",
+											service: "Enrollment",
+											rating: 2,
 											comment:
-												"Perfect service! Very quick and professional. The staff explained everything clearly.",
-											date: "2024-01-14 03:15 PM",
-											sentiment: "positive",
-										},
-									].map((feedback) => (
-										<div
-											key={feedback.id}
-											className="border rounded-lg p-3 space-y-2 bg-gray-50/50"
-										>
-											<div className="flex items-center justify-between">
-												<div className="flex items-center gap-2">
-													<div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-														<MessageSquare className="w-4 h-4 text-primary" />
-													</div>
-													<div>
-														<p className="font-medium text-sm">
-															{feedback.customerName}
-														</p>
-														<p className="text-xs text-muted-foreground">
-															{feedback.service}
-														</p>
-													</div>
-												</div>
-												<div className="text-right">
-													<div className="flex items-center gap-1 mb-1">
-														{Array.from({ length: 5 }).map((_, i) => (
-															<Star
-																key={i}
-																className={`w-3 h-3 ${
-																	i < feedback.rating
-																		? "fill-yellow-400 text-yellow-400"
-																		: "text-gray-300"
-																}`}
-															/>
-														))}
-													</div>
-													<Badge
-														className={
-															feedback.sentiment === "positive"
-																? "bg-green-100 text-green-800 text-xs"
-																: "bg-gray-100 text-gray-800 text-xs"
-														}
-													>
-														{feedback.sentiment}
-													</Badge>
-												</div>
-											</div>
-											<p className="text-xs text-muted-foreground pl-10">
-												{feedback.comment}
-											</p>
-											<div className="flex items-center justify-between pl-10">
-												<span className="text-xs text-muted-foreground">
-													{feedback.date}
-												</span>
-											</div>
-										</div>
-									))}
-								</div>
-							</div>
-
-							{/* View All Feedback Button */}
-							<div className="text-center pt-2">
-								<Button variant="outline" size="sm" className="bg-transparent">
-									<MessageSquare className="w-4 h-4 mr-2" />
-									View All Feedback
-								</Button>
-							</div>
-						</div>
-					</CardContent>
-				</Card>
-
-				{/* Feedback Results */}
-				<Card>
-					<CardHeader>
-						<CardTitle className="flex items-center gap-2">
-							<MessageSquare className="w-5 h-5 text-purple-600" />
-							Customer Feedback Results
-						</CardTitle>
-						<CardDescription>
-							Your recent customer feedback and ratings
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<div className="space-y-6">
-							{/* Feedback Statistics */}
-							<div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-								<div className="text-center">
-									<div className="text-2xl font-bold text-purple-600">127</div>
-									<p className="text-xs text-muted-foreground">
-										Total Feedback
-									</p>
-								</div>
-								<div className="text-center">
-									<div className="text-2xl font-bold text-yellow-600">4.7</div>
-									<p className="text-xs text-muted-foreground">Your Rating</p>
-								</div>
-								<div className="text-center">
-									<div className="text-2xl font-bold text-green-600">89%</div>
-									<p className="text-xs text-muted-foreground">Positive</p>
-								</div>
-								<div className="text-center">
-									<div className="text-2xl font-bold text-blue-600">4.3</div>
-									<p className="text-xs text-muted-foreground">Overall Avg</p>
-								</div>
-							</div>
-
-							{/* Recent Feedback */}
-							<div className="space-y-3">
-								<h4 className="font-semibold text-sm text-muted-foreground">
-									Recent Feedback
-								</h4>
-								<div className="space-y-3 max-h-64 overflow-y-auto">
-									{[
-										{
-											id: 1,
-											customerName: "Juan Dela Cruz",
-											service: "Transcript Request",
-											rating: 5,
-											comment:
-												"Very efficient service! Ana was very helpful and the process was quick. Thank you!",
-											date: "2024-01-15 10:30 AM",
-											sentiment: "positive",
-										},
-										{
-											id: 2,
-											customerName: "Maria Santos",
-											service: "Certificate Issuance",
-											rating: 4,
-											comment:
-												"Good service overall, but the waiting time could be improved. Staff was friendly though.",
-											date: "2024-01-15 09:45 AM",
-											sentiment: "positive",
-										},
-										{
-											id: 3,
-											customerName: "Ana Rodriguez",
-											service: "Grade Verification",
-											rating: 5,
-											comment:
-												"Perfect service! Very quick and professional. The staff explained everything clearly.",
-											date: "2024-01-14 03:15 PM",
-											sentiment: "positive",
+												"Long waiting time and confusing process. Staff needs better training.",
+											date: "2024-01-15 08:20 AM",
+											sentiment: "negative",
 										},
 									].map((feedback) => (
 										<div
@@ -1180,8 +1041,8 @@ export default function StaffDashboard() {
 							</Button>
 						</div>
 					</div>
-						</div>
-	)}
-</div>
-);
+				</div>
+			)}
+		</div>
+	);
 }

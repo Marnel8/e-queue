@@ -42,7 +42,6 @@ import {
 } from "lucide-react";
 import QRCode from "react-qr-code";
 
-
 interface EvaluationForm {
 	id: string;
 	title: string;
@@ -52,8 +51,9 @@ interface EvaluationForm {
 	questions: {
 		id: string;
 		question: string;
-		type: "rating" | "text" | "yes_no";
+		type: "rating" | "text" | "yes_no" | "radio" | "checkbox";
 		required: boolean;
+		choices?: string[];
 	}[];
 	createdAt: string;
 	status: "active" | "draft" | "archived";
@@ -72,7 +72,7 @@ interface EvaluationResponse {
 		questionId: string;
 		question: string;
 		answer: string | number;
-		type: "rating" | "text" | "yes_no";
+		type: "rating" | "text" | "yes_no" | "radio" | "checkbox";
 	}[];
 	overallRating: number;
 	comments: string;
@@ -173,9 +173,111 @@ export default function EvaluationPage() {
 						type: "rating",
 						required: true,
 					},
+					{
+						id: "q3",
+						question: "What type of assistance did you receive?",
+						type: "checkbox",
+						required: true,
+						choices: [
+							"Priority queue access",
+							"Dedicated staff support",
+							"Expedited processing",
+							"Regular queue access",
+						],
+					},
 				],
 				createdAt: new Date().toISOString(),
-				status: "draft",
+				status: "active",
+			},
+			{
+				id: "eval-003",
+				title: "Document Processing Evaluation",
+				description: "Evaluation form for document-related services",
+				office: currentAdmin.office,
+				services: ["Document Authentication", "Academic Records"],
+				questions: [
+					{
+						id: "q1",
+						question:
+							"How satisfied are you with the document processing speed?",
+						type: "rating",
+						required: true,
+					},
+					{
+						id: "q2",
+						question: "Which service option did you choose?",
+						type: "radio",
+						required: true,
+						choices: [
+							"Express processing",
+							"Standard processing",
+							"Basic processing",
+						],
+					},
+					{
+						id: "q3",
+						question: "Any specific feedback about the process?",
+						type: "text",
+						required: false,
+					},
+				],
+				createdAt: new Date().toISOString(),
+				status: "active",
+			},
+			{
+				id: "eval-004",
+				title: "Customer Experience Survey",
+				description: "Qualitative feedback form with no rating questions",
+				office: currentAdmin.office,
+				services: ["All Services"],
+				questions: [
+					{
+						id: "q1",
+						question: "Did you find our office location easily?",
+						type: "yes_no",
+						required: true,
+					},
+					{
+						id: "q2",
+						question: "What was your primary reason for visiting today?",
+						type: "radio",
+						required: true,
+						choices: [
+							"Academic records",
+							"Enrollment",
+							"Document processing",
+							"General inquiry",
+							"Other",
+						],
+					},
+					{
+						id: "q3",
+						question: "Which communication channels do you prefer?",
+						type: "checkbox",
+						required: true,
+						choices: [
+							"Email",
+							"SMS",
+							"Phone call",
+							"In-person",
+							"Online portal",
+						],
+					},
+					{
+						id: "q4",
+						question: "Describe your overall experience today",
+						type: "text",
+						required: true,
+					},
+					{
+						id: "q5",
+						question: "Would you recommend our services to others?",
+						type: "yes_no",
+						required: true,
+					},
+				],
+				createdAt: new Date().toISOString(),
+				status: "active",
 			},
 		];
 		setEvaluationForms(sampleForms);
@@ -285,6 +387,248 @@ export default function EvaluationPage() {
 				overallRating: 5.0,
 				comments: "Excellent service! Very fast and efficient.",
 			},
+			{
+				id: "resp-004",
+				formId: "eval-002",
+				customerName: "Emily Davis",
+				customerEmail: "emily.d@email.com",
+				service: "Enrollment",
+				staffMember: "Ana Garcia",
+				submittedAt: new Date(
+					Date.now() - 3 * 24 * 60 * 60 * 1000
+				).toISOString(),
+				responses: [
+					{
+						questionId: "q1",
+						question: "Was your priority status properly recognized?",
+						answer: "Yes",
+						type: "yes_no",
+					},
+					{
+						questionId: "q2",
+						question: "Rate the staff's assistance with your priority needs",
+						answer: 5,
+						type: "rating",
+					},
+					{
+						questionId: "q3",
+						question: "What type of assistance did you receive?",
+						answer: "Priority queue access, Dedicated staff support",
+						type: "checkbox",
+					},
+				],
+				overallRating: 5.0,
+				comments:
+					"Priority service was excellent. Staff went above and beyond.",
+			},
+			{
+				id: "resp-005",
+				formId: "eval-002",
+				customerName: "David Wilson",
+				customerEmail: "david.w@email.com",
+				service: "Grade Verification",
+				staffMember: "Ana Garcia",
+				submittedAt: new Date(
+					Date.now() - 4 * 24 * 60 * 60 * 1000
+				).toISOString(),
+				responses: [
+					{
+						questionId: "q1",
+						question: "Was your priority status properly recognized?",
+						answer: "No",
+						type: "yes_no",
+					},
+					{
+						questionId: "q2",
+						question: "Rate the staff's assistance with your priority needs",
+						answer: 3,
+						type: "rating",
+					},
+					{
+						questionId: "q3",
+						question: "What type of assistance did you receive?",
+						answer: "Regular queue access",
+						type: "checkbox",
+					},
+				],
+				overallRating: 3.0,
+				comments:
+					"Priority status was not recognized initially, but staff was helpful once identified.",
+			},
+			{
+				id: "resp-006",
+				formId: "eval-003",
+				customerName: "Lisa Chen",
+				customerEmail: "lisa.c@email.com",
+				service: "Document Authentication",
+				staffMember: "Carlos Rodriguez",
+				submittedAt: new Date(
+					Date.now() - 5 * 24 * 60 * 60 * 1000
+				).toISOString(),
+				responses: [
+					{
+						questionId: "q1",
+						question:
+							"How satisfied are you with the document processing speed?",
+						answer: 4,
+						type: "rating",
+					},
+					{
+						questionId: "q2",
+						question: "Which service option did you choose?",
+						answer: "Standard processing",
+						type: "radio",
+					},
+					{
+						questionId: "q3",
+						question: "Any specific feedback about the process?",
+						answer:
+							"The process was straightforward but could use more online options.",
+						type: "text",
+					},
+				],
+				overallRating: 4.0,
+				comments:
+					"Good service overall, would appreciate more digital options.",
+			},
+			{
+				id: "resp-007",
+				formId: "eval-004",
+				customerName: "Alex Thompson",
+				customerEmail: "alex.t@email.com",
+				service: "General Inquiry",
+				staffMember: "Maria Santos",
+				submittedAt: new Date(
+					Date.now() - 6 * 24 * 60 * 60 * 1000
+				).toISOString(),
+				responses: [
+					{
+						questionId: "q1",
+						question: "Did you find our office location easily?",
+						answer: "Yes",
+						type: "yes_no",
+					},
+					{
+						questionId: "q2",
+						question: "What was your primary reason for visiting today?",
+						answer: "General inquiry",
+						type: "radio",
+					},
+					{
+						questionId: "q3",
+						question: "Which communication channels do you prefer?",
+						answer: "Email, Online portal",
+						type: "checkbox",
+					},
+					{
+						questionId: "q4",
+						question: "Describe your overall experience today",
+						answer:
+							"Very helpful staff who answered all my questions clearly. The office was clean and well-organized.",
+						type: "text",
+					},
+					{
+						questionId: "q5",
+						question: "Would you recommend our services to others?",
+						answer: "Yes",
+						type: "yes_no",
+					},
+				],
+				overallRating: 0, // No rating questions in this form
+				comments: "Excellent customer service experience.",
+			},
+			{
+				id: "resp-008",
+				formId: "eval-004",
+				customerName: "Rachel Green",
+				customerEmail: "rachel.g@email.com",
+				service: "Academic Records",
+				staffMember: "Ana Garcia",
+				submittedAt: new Date(
+					Date.now() - 7 * 24 * 60 * 60 * 1000
+				).toISOString(),
+				responses: [
+					{
+						questionId: "q1",
+						question: "Did you find our office location easily?",
+						answer: "No",
+						type: "yes_no",
+					},
+					{
+						questionId: "q2",
+						question: "What was your primary reason for visiting today?",
+						answer: "Academic records",
+						type: "radio",
+					},
+					{
+						questionId: "q3",
+						question: "Which communication channels do you prefer?",
+						answer: "SMS, Phone call",
+						type: "checkbox",
+					},
+					{
+						questionId: "q4",
+						question: "Describe your overall experience today",
+						answer:
+							"Had trouble finding the office initially, but once inside, the staff was very helpful and efficient.",
+						type: "text",
+					},
+					{
+						questionId: "q5",
+						question: "Would you recommend our services to others?",
+						answer: "Yes",
+						type: "yes_no",
+					},
+				],
+				overallRating: 0, // No rating questions in this form
+				comments: "Good service but better signage would help.",
+			},
+			{
+				id: "resp-009",
+				formId: "eval-004",
+				customerName: "Tom Anderson",
+				customerEmail: "tom.a@email.com",
+				service: "Enrollment",
+				staffMember: "Carlos Rodriguez",
+				submittedAt: new Date(
+					Date.now() - 8 * 24 * 60 * 60 * 1000
+				).toISOString(),
+				responses: [
+					{
+						questionId: "q1",
+						question: "Did you find our office location easily?",
+						answer: "Yes",
+						type: "yes_no",
+					},
+					{
+						questionId: "q2",
+						question: "What was your primary reason for visiting today?",
+						answer: "Enrollment",
+						type: "radio",
+					},
+					{
+						questionId: "q3",
+						question: "Which communication channels do you prefer?",
+						answer: "Email, In-person",
+						type: "checkbox",
+					},
+					{
+						questionId: "q4",
+						question: "Describe your overall experience today",
+						answer:
+							"The enrollment process was smooth and well-explained. Staff took time to answer all my questions.",
+						type: "text",
+					},
+					{
+						questionId: "q5",
+						question: "Would you recommend our services to others?",
+						answer: "Yes",
+						type: "yes_no",
+					},
+				],
+				overallRating: 0, // No rating questions in this form
+				comments: "Very professional and helpful staff.",
+			},
 		];
 		setEvaluationResponses(sampleResponses);
 	};
@@ -332,6 +676,144 @@ export default function EvaluationPage() {
 			  )
 			: 0;
 
+	// Calculate analytics for non-rating question types
+	const getQuestionTypeAnalytics = () => {
+		const questionTypes = {
+			rating: 0,
+			text: 0,
+			yes_no: 0,
+			radio: 0,
+			checkbox: 0,
+		};
+
+		evaluationResponses.forEach((response) => {
+			response.responses.forEach((resp) => {
+				questionTypes[resp.type as keyof typeof questionTypes]++;
+			});
+		});
+
+		return questionTypes;
+	};
+
+	const questionTypeCounts = getQuestionTypeAnalytics();
+
+	// Calculate Yes/No analytics
+	const getYesNoAnalytics = () => {
+		const yesNoResponses = evaluationResponses.flatMap((response) =>
+			response.responses.filter((resp) => resp.type === "yes_no")
+		);
+
+		const yesCount = yesNoResponses.filter(
+			(resp) => resp.answer === "Yes"
+		).length;
+		const noCount = yesNoResponses.filter(
+			(resp) => resp.answer === "No"
+		).length;
+		const totalYesNo = yesNoResponses.length;
+
+		return {
+			yesCount,
+			noCount,
+			totalYesNo,
+			yesPercentage:
+				totalYesNo > 0 ? Math.round((yesCount / totalYesNo) * 100) : 0,
+			noPercentage:
+				totalYesNo > 0 ? Math.round((noCount / totalYesNo) * 100) : 0,
+		};
+	};
+
+	const yesNoAnalytics = getYesNoAnalytics();
+
+	// Calculate Radio button analytics
+	const getRadioAnalytics = () => {
+		const radioResponses = evaluationResponses.flatMap((response) =>
+			response.responses.filter((resp) => resp.type === "radio")
+		);
+
+		const radioCounts: { [key: string]: number } = {};
+		radioResponses.forEach((resp) => {
+			const answer = resp.answer as string;
+			radioCounts[answer] = (radioCounts[answer] || 0) + 1;
+		});
+
+		return {
+			totalRadio: radioResponses.length,
+			radioCounts,
+		};
+	};
+
+	const radioAnalytics = getRadioAnalytics();
+
+	// Calculate Checkbox analytics
+	const getCheckboxAnalytics = () => {
+		const checkboxResponses = evaluationResponses.flatMap((response) =>
+			response.responses.filter((resp) => resp.type === "checkbox")
+		);
+
+		const checkboxCounts: { [key: string]: number } = {};
+		checkboxResponses.forEach((resp) => {
+			const answers = (resp.answer as string).split(", ");
+			answers.forEach((answer) => {
+				checkboxCounts[answer] = (checkboxCounts[answer] || 0) + 1;
+			});
+		});
+
+		return {
+			totalCheckbox: checkboxResponses.length,
+			checkboxCounts,
+		};
+	};
+
+	const checkboxAnalytics = getCheckboxAnalytics();
+
+	// Calculate Text response analytics
+	const getTextAnalytics = () => {
+		const textResponses = evaluationResponses.flatMap((response) =>
+			response.responses.filter((resp) => resp.type === "text")
+		);
+
+		const averageTextLength =
+			textResponses.length > 0
+				? Math.round(
+						textResponses.reduce(
+							(sum, resp) => sum + (resp.answer as string).length,
+							0
+						) / textResponses.length
+				  )
+				: 0;
+
+		return {
+			totalText: textResponses.length,
+			averageTextLength,
+			textResponses: textResponses.slice(0, 5).map((resp) => ({
+				...resp,
+				answer: resp.answer as string,
+			})), // Show first 5 text responses with proper typing
+		};
+	};
+
+	const textAnalytics = getTextAnalytics();
+
+	// Calculate analytics for forms with no rating questions
+	const getNonRatingFormAnalytics = () => {
+		const nonRatingForms = evaluationForms.filter(
+			(form) => !form.questions.some((q) => q.type === "rating")
+		);
+
+		const nonRatingResponses = evaluationResponses.filter((response) =>
+			nonRatingForms.some((form) => form.id === response.formId)
+		);
+
+		return {
+			totalNonRatingForms: nonRatingForms.length,
+			totalNonRatingResponses: nonRatingResponses.length,
+			nonRatingForms: nonRatingForms,
+			nonRatingResponses: nonRatingResponses,
+		};
+	};
+
+	const nonRatingAnalytics = getNonRatingFormAnalytics();
+
 	const generateQRCode = (form: EvaluationForm) => {
 		const qrData = {
 			type: "evaluation_form",
@@ -361,6 +843,7 @@ export default function EvaluationPage() {
 			question: "",
 			type: "rating" as const,
 			required: true,
+			choices: [] as string[],
 		};
 		setNewForm({
 			...newForm,
@@ -374,6 +857,33 @@ export default function EvaluationPage() {
 		setNewForm({ ...newForm, questions: updatedQuestions });
 	};
 
+	const addChoice = (questionIndex: number) => {
+		const updatedQuestions = [...newForm.questions];
+		updatedQuestions[questionIndex].choices = [
+			...updatedQuestions[questionIndex].choices,
+			"",
+		];
+		setNewForm({ ...newForm, questions: updatedQuestions });
+	};
+
+	const updateChoice = (
+		questionIndex: number,
+		choiceIndex: number,
+		value: string
+	) => {
+		const updatedQuestions = [...newForm.questions];
+		updatedQuestions[questionIndex].choices[choiceIndex] = value;
+		setNewForm({ ...newForm, questions: updatedQuestions });
+	};
+
+	const removeChoice = (questionIndex: number, choiceIndex: number) => {
+		const updatedQuestions = [...newForm.questions];
+		updatedQuestions[questionIndex].choices = updatedQuestions[
+			questionIndex
+		].choices.filter((_: string, i: number) => i !== choiceIndex);
+		setNewForm({ ...newForm, questions: updatedQuestions });
+	};
+
 	const removeQuestion = (index: number) => {
 		const updatedQuestions = newForm.questions.filter((_, i) => i !== index);
 		setNewForm({ ...newForm, questions: updatedQuestions });
@@ -383,6 +893,19 @@ export default function EvaluationPage() {
 		if (!newForm.title || newForm.questions.length === 0) {
 			alert("Please fill in the form title and add at least one question.");
 			return;
+		}
+
+		// Validate that radio and checkbox questions have choices
+		for (const question of newForm.questions) {
+			if (
+				(question.type === "radio" || question.type === "checkbox") &&
+				(!question.choices || question.choices.length === 0)
+			) {
+				alert(
+					`Question "${question.question}" requires answer choices for ${question.type} type.`
+				);
+				return;
+			}
 		}
 
 		const form: EvaluationForm = {
@@ -704,6 +1227,263 @@ export default function EvaluationPage() {
 								</CardContent>
 							</Card>
 						</div>
+
+						{/* Non-Rating Question Analytics */}
+						<Card>
+							<CardHeader>
+								<CardTitle className="flex items-center gap-2">
+									<BarChart3 className="w-5 h-5 text-blue-600" />
+									Non-Rating Question Analytics
+								</CardTitle>
+								<CardDescription>
+									Analytics for forms with no rating questions
+								</CardDescription>
+							</CardHeader>
+							<CardContent>
+								<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+									<Card>
+										<CardContent className="p-4">
+											<div className="flex items-center justify-between">
+												<div>
+													<p className="text-sm text-gray-600">
+														Non-Rating Forms
+													</p>
+													<p className="text-2xl font-bold text-[#071952]">
+														{nonRatingAnalytics.totalNonRatingForms}
+													</p>
+												</div>
+												<div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+													<FileText className="w-5 h-5 text-indigo-600" />
+												</div>
+											</div>
+										</CardContent>
+									</Card>
+
+									<Card>
+										<CardContent className="p-4">
+											<div className="flex items-center justify-between">
+												<div>
+													<p className="text-sm text-gray-600">
+														Non-Rating Responses
+													</p>
+													<p className="text-2xl font-bold text-[#071952]">
+														{nonRatingAnalytics.totalNonRatingResponses}
+													</p>
+												</div>
+												<div className="w-10 h-10 bg-pink-100 rounded-lg flex items-center justify-center">
+													<MessageSquare className="w-5 h-5 text-pink-600" />
+												</div>
+											</div>
+										</CardContent>
+									</Card>
+
+									<Card>
+										<CardContent className="p-4">
+											<div className="flex items-center justify-between">
+												<div>
+													<p className="text-sm text-gray-600">
+														Yes/No Questions
+													</p>
+													<p className="text-2xl font-bold text-[#071952]">
+														{questionTypeCounts.yes_no}
+													</p>
+												</div>
+												<div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+													<CheckCircle className="w-5 h-5 text-orange-600" />
+												</div>
+											</div>
+										</CardContent>
+									</Card>
+
+									<Card>
+										<CardContent className="p-4">
+											<div className="flex items-center justify-between">
+												<div>
+													<p className="text-sm text-gray-600">
+														Text Responses
+													</p>
+													<p className="text-2xl font-bold text-[#071952]">
+														{questionTypeCounts.text}
+													</p>
+												</div>
+												<div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
+													<FileText className="w-5 h-5 text-teal-600" />
+												</div>
+											</div>
+										</CardContent>
+									</Card>
+								</div>
+
+								{/* Yes/No Analytics */}
+								{yesNoAnalytics.totalYesNo > 0 && (
+									<div className="mb-6">
+										<h3 className="text-lg font-semibold mb-3">
+											Yes/No Question Results
+										</h3>
+										<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+											<div className="bg-green-50 p-4 rounded-lg">
+												<div className="flex items-center justify-between">
+													<span className="text-sm font-medium text-green-800">
+														Yes Responses
+													</span>
+													<span className="text-2xl font-bold text-green-600">
+														{yesNoAnalytics.yesCount}
+													</span>
+												</div>
+												<div className="mt-2">
+													<div className="w-full bg-green-200 rounded-full h-2">
+														<div
+															className="bg-green-600 h-2 rounded-full"
+															style={{
+																width: `${yesNoAnalytics.yesPercentage}%`,
+															}}
+														></div>
+													</div>
+													<p className="text-xs text-green-600 mt-1">
+														{yesNoAnalytics.yesPercentage}%
+													</p>
+												</div>
+											</div>
+											<div className="bg-red-50 p-4 rounded-lg">
+												<div className="flex items-center justify-between">
+													<span className="text-sm font-medium text-red-800">
+														No Responses
+													</span>
+													<span className="text-2xl font-bold text-red-600">
+														{yesNoAnalytics.noCount}
+													</span>
+												</div>
+												<div className="mt-2">
+													<div className="w-full bg-red-200 rounded-full h-2">
+														<div
+															className="bg-red-600 h-2 rounded-full"
+															style={{
+																width: `${yesNoAnalytics.noPercentage}%`,
+															}}
+														></div>
+													</div>
+													<p className="text-xs text-red-600 mt-1">
+														{yesNoAnalytics.noPercentage}%
+													</p>
+												</div>
+											</div>
+										</div>
+									</div>
+								)}
+
+								{/* Radio Button Analytics */}
+								{radioAnalytics.totalRadio > 0 && (
+									<div className="mb-6">
+										<h3 className="text-lg font-semibold mb-3">
+											Radio Button Question Results
+										</h3>
+										<div className="space-y-3">
+											{Object.entries(radioAnalytics.radioCounts).map(
+												([choice, count]) => (
+													<div
+														key={choice}
+														className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+													>
+														<span className="font-medium">{choice}</span>
+														<div className="flex items-center gap-2">
+															<span className="text-sm text-gray-600">
+																{count} responses
+															</span>
+															<Badge variant="outline">
+																{Math.round(
+																	(count / radioAnalytics.totalRadio) * 100
+																)}
+																%
+															</Badge>
+														</div>
+													</div>
+												)
+											)}
+										</div>
+									</div>
+								)}
+
+								{/* Checkbox Analytics */}
+								{checkboxAnalytics.totalCheckbox > 0 && (
+									<div className="mb-6">
+										<h3 className="text-lg font-semibold mb-3">
+											Checkbox Question Results
+										</h3>
+										<div className="space-y-3">
+											{Object.entries(checkboxAnalytics.checkboxCounts).map(
+												([choice, count]) => (
+													<div
+														key={choice}
+														className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+													>
+														<span className="font-medium">{choice}</span>
+														<div className="flex items-center gap-2">
+															<span className="text-sm text-gray-600">
+																{count} selections
+															</span>
+															<Badge variant="outline">
+																{Math.round(
+																	(count / checkboxAnalytics.totalCheckbox) *
+																		100
+																)}
+																%
+															</Badge>
+														</div>
+													</div>
+												)
+											)}
+										</div>
+									</div>
+								)}
+
+								{/* Text Response Analytics */}
+								{textAnalytics.totalText > 0 && (
+									<div>
+										<h3 className="text-lg font-semibold mb-3">
+											Text Response Analytics
+										</h3>
+										<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+											<div className="bg-blue-50 p-4 rounded-lg">
+												<span className="text-sm font-medium text-blue-800">
+													Total Text Responses
+												</span>
+												<p className="text-2xl font-bold text-blue-600">
+													{textAnalytics.totalText}
+												</p>
+											</div>
+											<div className="bg-purple-50 p-4 rounded-lg">
+												<span className="text-sm font-medium text-purple-800">
+													Average Response Length
+												</span>
+												<p className="text-2xl font-bold text-purple-600">
+													{textAnalytics.averageTextLength} characters
+												</p>
+											</div>
+										</div>
+										<div>
+											<h4 className="text-md font-medium mb-2">
+												Recent Text Responses
+											</h4>
+											<div className="space-y-2">
+												{textAnalytics.textResponses.map((resp, index) => (
+													<div
+														key={index}
+														className="bg-gray-50 p-3 rounded-lg"
+													>
+														<p className="text-sm text-gray-700">
+															{resp.answer}
+														</p>
+														<p className="text-xs text-gray-500 mt-1">
+															{resp.answer.length} characters
+														</p>
+													</div>
+												))}
+											</div>
+										</div>
+									</div>
+								)}
+							</CardContent>
+						</Card>
 
 						{/* Filters and Search */}
 						<Card>
@@ -1044,6 +1824,10 @@ export default function EvaluationPage() {
 																	<SelectItem value="rating">Rating</SelectItem>
 																	<SelectItem value="text">Text</SelectItem>
 																	<SelectItem value="yes_no">Yes/No</SelectItem>
+																	<SelectItem value="radio">Radio</SelectItem>
+																	<SelectItem value="checkbox">
+																		Checkbox
+																	</SelectItem>
 																</SelectContent>
 															</Select>
 														</div>
@@ -1063,6 +1847,78 @@ export default function EvaluationPage() {
 															<span className="text-xs">Required</span>
 														</label>
 													</div>
+
+													{/* Answer Choices for Radio and Checkbox */}
+													{(question.type === "radio" ||
+														question.type === "checkbox") && (
+														<div className="space-y-3">
+															<div className="flex items-center justify-between">
+																<Label className="text-xs">
+																	Answer Choices
+																</Label>
+																<Button
+																	onClick={() => addChoice(index)}
+																	variant="outline"
+																	size="sm"
+																	type="button"
+																>
+																	<Plus className="w-3 h-3 mr-1" />
+																	Add Choice
+																</Button>
+															</div>
+
+															<div className="space-y-2">
+																{question.choices?.map(
+																	(choice: string, choiceIndex: number) => (
+																		<div
+																			key={choiceIndex}
+																			className="flex items-center gap-2"
+																		>
+																			<div className="w-4 h-4">
+																				{question.type === "radio" ? (
+																					<div className="w-4 h-4 rounded-full border-2 border-gray-300"></div>
+																				) : (
+																					<div className="w-4 h-4 border-2 border-gray-300 rounded"></div>
+																				)}
+																			</div>
+																			<Input
+																				value={choice}
+																				onChange={(e) =>
+																					updateChoice(
+																						index,
+																						choiceIndex,
+																						e.target.value
+																					)
+																				}
+																				placeholder={`Choice ${
+																					choiceIndex + 1
+																				}`}
+																				className="flex-1"
+																			/>
+																			<Button
+																				onClick={() =>
+																					removeChoice(index, choiceIndex)
+																				}
+																				variant="outline"
+																				size="sm"
+																				type="button"
+																			>
+																				<X className="w-3 h-3" />
+																			</Button>
+																		</div>
+																	)
+																)}
+
+																{(!question.choices ||
+																	question.choices.length === 0) && (
+																	<div className="text-center py-2 text-gray-500 text-xs">
+																		No choices added yet. Click "Add Choice" to
+																		get started.
+																	</div>
+																)}
+															</div>
+														</div>
+													)}
 												</div>
 											))}
 
