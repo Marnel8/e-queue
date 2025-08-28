@@ -1,6 +1,6 @@
 "use client";
 
-import { CustomerLayout } from "@/components/customer/layout";
+
 import {
 	Card,
 	CardContent,
@@ -22,11 +22,7 @@ import { ViolationsDisplay } from "@/components/ui/violations-display";
 
 export default function CustomerViolationsPage() {
 	return (
-		<CustomerLayout
-			title="Account Violations"
-			description="Review your account status and any violations"
-		>
-			<div className="space-y-6">
+		<div className="space-y-6">
 				{/* Account Status Overview */}
 				<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 					<Card className="border-0 shadow-sm hover:shadow-md transition-all duration-200">
@@ -229,7 +225,6 @@ export default function CustomerViolationsPage() {
 						</div>
 					</CardContent>
 				</Card>
-			</div>
-		</CustomerLayout>
+		</div>
 	);
 }

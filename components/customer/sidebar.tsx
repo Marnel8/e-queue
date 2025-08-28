@@ -28,8 +28,7 @@ const navigation = [
 
 const mobileNavigation = [
 	{ name: "Queue", href: "/customer", icon: LayoutDashboard },
-	{ name: "Ticket", href: "/customer/book", icon: Calendar },
-	{ name: "Tickets", href: "/customer/tickets", icon: Ticket },
+	{ name: "My Tickets", href: "/customer/tickets", icon: Ticket },
 	{ name: "Feedback", href: "/customer/feedback", icon: MessageSquare },
 	{ name: "Violations", href: "/customer/violations", icon: AlertTriangle },
 	{ name: "Profile", href: "/customer/profile", icon: User },
@@ -87,7 +86,7 @@ export function CustomerSidebar({
 			className={cn(
 				"bg-white border-r border-border flex flex-col transition-all duration-300 h-full",
 				!isMobile && "relative",
-				!isMobile && (collapsed ? "w-16" : "w-64"),
+				!isMobile && (collapsed ? "w-20" : "w-64"),
 				isMobile && "w-64"
 			)}
 		>
@@ -144,6 +143,7 @@ export function CustomerSidebar({
 									className={cn(
 										"flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-colors",
 										isMobile && "py-4",
+										collapsed && !isMobile && "justify-center px-2",
 										isActive
 											? "bg-primary text-primary-foreground"
 											: "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -182,7 +182,7 @@ export function CustomerSidebar({
 					className={cn(
 						"w-full justify-start text-muted-foreground hover:text-foreground",
 						isMobile && "py-3",
-						collapsed && !isMobile && "justify-center"
+						collapsed && !isMobile && "justify-center px-2"
 					)}
 				>
 					<LogOut className="w-4 h-4" />

@@ -1,4 +1,4 @@
-import { CustomerLayout } from "@/components/customer/layout";
+
 import {
 	Card,
 	CardContent,
@@ -22,11 +22,7 @@ import { User, Upload, Save, Lock } from "lucide-react";
 
 export default function Profile() {
 	return (
-		<CustomerLayout
-			title="Profile"
-			description="Manage your account information"
-		>
-			<div className="max-w-2xl mx-auto space-y-6">
+		<div className="max-w-2xl mx-auto space-y-6">
 				{/* Profile Header */}
 				<Card>
 					<CardContent className="pt-6">
@@ -226,7 +222,6 @@ export default function Profile() {
 						</div>
 					</CardContent>
 				</Card>
-			</div>
-		</CustomerLayout>
+		</div>
 	);
 }

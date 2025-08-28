@@ -1,14 +1,10 @@
-import { CustomerLayout } from "@/components/customer/layout";
+
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function EvaluationLoading() {
 	return (
-		<CustomerLayout
-			title="Service Evaluation"
-			description="Rate your service experience and provide feedback"
-		>
-			<div className="space-y-6">
+		<div className="space-y-6">
 				{/* Evaluation Form Skeleton */}
 				<Card className="border-2 border-[#37B7C3] bg-gradient-to-br from-[#EBF4F6] to-white">
 					<CardHeader>
@@ -109,8 +105,7 @@ export default function EvaluationLoading() {
 						</div>
 					</CardContent>
 				</Card>
-			</div>
-		</CustomerLayout>
+		</div>
 	);
 }
 

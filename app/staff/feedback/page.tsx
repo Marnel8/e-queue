@@ -1,4 +1,4 @@
-import { StaffLayout } from "@/components/staff/layout";
+
 import {
 	Card,
 	CardContent,
@@ -108,11 +108,7 @@ const getSentimentIcon = (sentiment: string) => {
 
 export default function CustomerFeedback() {
 	return (
-		<StaffLayout
-			title="Customer Feedback"
-			description="View and analyze customer feedback for your services"
-		>
-			<div className="space-y-6">
+		<div className="space-y-6">
 				{/* Feedback Statistics */}
 				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
 					<Card>
@@ -309,7 +305,6 @@ export default function CustomerFeedback() {
 						</div>
 					</CardContent>
 				</Card>
-			</div>
-		</StaffLayout>
+		</div>
 	);
 }

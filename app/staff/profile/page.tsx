@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { StaffLayout } from "@/components/staff/layout"
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -88,8 +88,7 @@ export default function StaffProfile() {
   }
 
   return (
-    <StaffLayout title="My Profile" description="Manage your profile information and view performance metrics">
-      <div className="space-y-6">
+    <div className="space-y-6">
         {/* Profile Header */}
         <Card className="border-2 border-[#071952] bg-gradient-to-br from-[#EBF4F6] to-white">
           <CardContent className="p-6">
@@ -418,7 +417,6 @@ export default function StaffProfile() {
             </Card>
           </div>
         </div>
-      </div>
-    </StaffLayout>
+    </div>
   )
 }

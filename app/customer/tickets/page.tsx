@@ -1,6 +1,6 @@
 "use client";
 
-import { CustomerLayout } from "@/components/customer/layout";
+
 import {
 	Card,
 	CardContent,
@@ -132,11 +132,7 @@ export default function MyTickets() {
 	};
 
 	return (
-		<CustomerLayout
-			title="My Tickets"
-			description="View and manage your queue tickets"
-		>
-			<div className="space-y-6">
+		<div className="space-y-6">
 				{/* Ticket Statistics */}
 				<div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
 					<Card>
@@ -504,7 +500,6 @@ export default function MyTickets() {
 						</Card>
 					</div>
 				)}
-			</div>
-		</CustomerLayout>
+		</div>
 	);
 }

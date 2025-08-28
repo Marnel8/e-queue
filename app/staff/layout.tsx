@@ -2,31 +2,37 @@
 
 import type React from "react";
 import { useState, useEffect } from "react";
-import { CustomerSidebar } from "./sidebar";
+import { StaffSidebar } from "@/components/staff/sidebar";
 import { Button } from "@/components/ui/button";
 import { Bell, Search, Menu } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-interface CustomerLayoutProps {
-	children: React.ReactNode;
-	title: string;
-	description?: string;
-}
-
-export function CustomerLayout({
+export default function StaffLayout({
 	children,
-	title,
-	description,
-}: CustomerLayoutProps) {
+}: {
+	children: React.ReactNode;
+}) {
 	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-	const [isClient, setIsClient] = useState(false);
+	const [isMounted, setIsMounted] = useState(false);
 
+	// Prevent hydration mismatch by only rendering after mount
 	useEffect(() => {
-		setIsClient(true);
+		setIsMounted(true);
 	}, []);
+
+	// Don't render until mounted to prevent hydration issues
+	if (!isMounted) {
+		return (
+			<div className="min-h-screen bg-background">
+				<div className="flex items-center justify-center h-screen">
+					<div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="min-h-screen bg-background">
@@ -36,7 +42,7 @@ export function CustomerLayout({
 					sidebarCollapsed ? "lg:w-16" : "lg:w-64"
 				)}
 			>
-				<CustomerSidebar
+				<StaffSidebar
 					collapsed={sidebarCollapsed}
 					onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
 				/>
@@ -57,7 +63,7 @@ export function CustomerLayout({
 					mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
 				)}
 			>
-				<CustomerSidebar
+				<StaffSidebar
 					collapsed={false}
 					onToggle={() => setMobileMenuOpen(false)}
 					isMobile={true}
@@ -74,7 +80,7 @@ export function CustomerLayout({
 				{/* Header */}
 				<header className="sticky top-0 z-40 bg-white border-b border-border px-4 py-3 lg:px-6 lg:py-4">
 					<div className="flex items-center justify-between">
-						{/* Mobile Menu Button & Title */}
+						{/* Mobile Menu Button */}
 						<div className="flex items-center gap-3">
 							<Button
 								variant="ghost"
@@ -84,30 +90,15 @@ export function CustomerLayout({
 							>
 								<Menu className="w-5 h-5" />
 							</Button>
-							<div>
-								<h1 className="text-lg lg:text-2xl font-bold text-primary truncate">
-									{title}
-								</h1>
-								{description && (
-									<p className="text-sm text-muted-foreground hidden sm:block">
-										{description}
-									</p>
-								)}
-							</div>
 						</div>
 
 						{/* Header Actions */}
 						<div className="flex items-center gap-2 lg:gap-4">
 							{/* Search - Hidden on mobile, shown on tablet+ */}
-							{isClient && (
-								<div className="relative hidden md:block">
-									<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-									<Input
-										placeholder="Search..."
-										className="pl-10 w-48 lg:w-64"
-									/>
-								</div>
-							)}
+							<div className="relative hidden md:block">
+								<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+								<Input type="text" placeholder="Search..." className="pl-10 w-48 lg:w-64" />
+							</div>
 
 							{/* Search Button for Mobile */}
 							<Button variant="ghost" size="sm" className="md:hidden p-2">
@@ -118,7 +109,7 @@ export function CustomerLayout({
 							<Button variant="ghost" size="sm" className="relative p-2">
 								<Bell className="w-5 h-5" />
 								<Badge className="absolute -top-1 -right-1 w-5 h-5 p-0 flex items-center justify-center bg-destructive text-destructive-foreground text-xs">
-									1
+									2
 								</Badge>
 							</Button>
 						</div>
@@ -129,7 +120,7 @@ export function CustomerLayout({
 			</div>
 
 			<div className="lg:hidden">
-				<CustomerSidebar
+				<StaffSidebar
 					collapsed={false}
 					onToggle={() => {}}
 					isBottomNav={true}

@@ -67,7 +67,7 @@ export function OfficeAdminSidebar({
 		<div
 			className={cn(
 				"bg-white border-r border-border flex flex-col transition-all duration-300 relative",
-				collapsed ? "w-16" : "w-64",
+				collapsed ? "w-20" : "w-64",
 				mobile ? "h-full" : "fixed left-0 top-0 h-screen z-30"
 			)}
 		>
@@ -112,6 +112,7 @@ export function OfficeAdminSidebar({
 									href={item.href}
 									className={cn(
 										"flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+										collapsed && "justify-center px-2",
 										isActive
 											? "bg-[#071952] text-white"
 											: "text-gray-600 hover:text-[#071952] hover:bg-gray-100"
@@ -148,7 +149,7 @@ export function OfficeAdminSidebar({
 					size="sm"
 					className={cn(
 						"w-full justify-start text-gray-600 hover:text-[#071952] hover:bg-gray-100",
-						collapsed && "justify-center"
+						collapsed && "justify-center px-2"
 					)}
 				>
 					<LogOut className="w-4 h-4" />

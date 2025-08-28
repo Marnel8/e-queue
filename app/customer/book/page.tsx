@@ -3,7 +3,7 @@
 import type React from "react";
 
 import { useEffect, useState } from "react";
-import { CustomerLayout } from "@/components/customer/layout";
+
 import {
 	Card,
 	CardContent,
@@ -268,11 +268,7 @@ export default function BookTicket() {
 
 	if (isSubmitted) {
 		return (
-			<CustomerLayout
-				title="Ticket Issued"
-				description="Your same-day queue ticket has been created"
-			>
-				<div className="max-w-2xl mx-auto">
+			<div className="max-w-2xl mx-auto">
 					<Card>
 						<CardHeader className="text-center">
 							<div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -316,17 +312,12 @@ export default function BookTicket() {
 							</div>
 						</CardContent>
 					</Card>
-				</div>
-			</CustomerLayout>
+			</div>
 		);
 	}
 
 	return (
-		<CustomerLayout
-			title="Get Ticket"
-			description="Select office and service to get a same-day ticket"
-		>
-			<div className="max-w-4xl mx-auto">
+		<div className="max-w-4xl mx-auto">
 				{(hasActiveTicket || hasPendingEvaluation) && (
 					<div className="mb-4 p-4 border rounded bg-yellow-50 text-yellow-800 flex items-start gap-2">
 						<AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
@@ -650,7 +641,6 @@ export default function BookTicket() {
 						</div>
 					</CardContent>
 				</Card>
-			</div>
-		</CustomerLayout>
+		</div>
 	);
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { StaffLayout } from "@/components/staff/layout";
+
 import {
 	Card,
 	CardContent,
@@ -349,11 +349,7 @@ export default function StaffDashboard() {
 	// If queue is locked by another staff member, show takeover screen
 	if (isQueueLocked) {
 		return (
-			<StaffLayout
-				title="Queue Locked"
-				description="Another staff member is managing this queue"
-			>
-				<div className="max-w-2xl mx-auto">
+			<div className="max-w-2xl mx-auto">
 					<Card>
 						<CardHeader className="text-center">
 							<div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -387,17 +383,13 @@ export default function StaffDashboard() {
 								</div>
 							</div>
 						</CardContent>
-					</Card>
-				</div>
-			</StaffLayout>
-		);
-	}
+									</Card>
+		</div>
+	);
+}
 
 	return (
-		<StaffLayout
-			title="Queue Dashboard"
-			description="Manage customer queue in real-time"
-		>
+		<div>
 			{/* Staff Assignment Status */}
 			<Card className="mb-6">
 				<CardHeader className="pb-3">
@@ -1188,8 +1180,8 @@ export default function StaffDashboard() {
 							</Button>
 						</div>
 					</div>
-				</div>
-			)}
-		</StaffLayout>
-	);
+						</div>
+	)}
+</div>
+);
 }

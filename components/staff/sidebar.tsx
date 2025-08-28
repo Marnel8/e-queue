@@ -100,7 +100,7 @@ export function StaffSidebar({
 			className={cn(
 				"bg-white border-r border-border flex flex-col transition-all duration-300 h-full",
 				!isMobile && "relative",
-				!isMobile && (collapsed ? "w-16" : "w-64"),
+				!isMobile && (collapsed ? "w-20" : "w-64"),
 				isMobile && "w-64"
 			)}
 		>
@@ -153,12 +153,14 @@ export function StaffSidebar({
 					{navigation.map((item) => {
 						const isActive = pathname === item.href;
 						return (
+							<li key={item.name}>
 								<Link
 									key={item.name}
 									href={item.href}
 									className={cn(
 										"flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-colors",
 										isMobile && "py-4",
+										collapsed && !isMobile && "justify-center px-2",
 										isActive
 											? "bg-primary text-primary-foreground"
 											: "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -168,6 +170,7 @@ export function StaffSidebar({
 									<item.icon className="w-5 h-5 flex-shrink-0" />
 									{(!collapsed || isMobile) && <span>{item.name}</span>}
 								</Link>
+							</li>
 						);
 					})}
 				</ul>
@@ -196,7 +199,7 @@ export function StaffSidebar({
 					className={cn(
 						"w-full justify-start text-muted-foreground hover:text-foreground",
 						isMobile && "py-3",
-						collapsed && !isMobile && "justify-center"
+						collapsed && !isMobile && "justify-center px-2"
 					)}
 				>
 					<LogOut className="w-4 h-4" />

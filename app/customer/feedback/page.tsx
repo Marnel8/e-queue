@@ -1,6 +1,6 @@
 "use client";
 
-import { CustomerLayout } from "@/components/customer/layout";
+
 import {
 	Card,
 	CardContent,
@@ -79,11 +79,7 @@ export default function Feedback() {
 		: [];
 
 	return (
-		<CustomerLayout
-			title="Feedback"
-			description="Share your experience and help us improve"
-		>
-			<div className="max-w-2xl mx-auto space-y-6">
+		<div className="max-w-2xl mx-auto space-y-6">
 				{/* Feedback Form */}
 				<Card>
 					<CardHeader>
@@ -270,7 +266,6 @@ export default function Feedback() {
 						</div>
 					</CardContent>
 				</Card>
-			</div>
-		</CustomerLayout>
+		</div>
 	);
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { CustomerLayout } from "@/components/customer/layout";
+
 import {
 	Card,
 	CardContent,
@@ -249,11 +249,7 @@ export default function ServiceEvaluationPage() {
 
 	if (showSuccess) {
 		return (
-			<CustomerLayout
-				title="Evaluation Submitted"
-				description="Thank you for your feedback"
-			>
-				<div className="max-w-2xl mx-auto">
+			<div className="max-w-2xl mx-auto">
 					<Card>
 						<CardHeader className="text-center">
 							<div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -313,19 +309,14 @@ export default function ServiceEvaluationPage() {
 							</div>
 						</CardContent>
 					</Card>
-				</div>
-			</CustomerLayout>
+			</div>
 		);
 	}
 
 	// Only allow evaluation when linked to a completed transaction
 	if (!transactionInfo) {
 		return (
-			<CustomerLayout
-				title="Service Evaluation"
-				description="Evaluations are submitted after a completed service"
-			>
-				<div className="max-w-2xl mx-auto space-y-6">
+			<div className="max-w-2xl mx-auto space-y-6">
 					<Card className="border-2 border-blue-200 bg-blue-50">
 						<CardHeader>
 							<CardTitle className="text-blue-900">
@@ -387,17 +378,12 @@ export default function ServiceEvaluationPage() {
 							</ul>
 						</CardContent>
 					</Card>
-				</div>
-			</CustomerLayout>
+			</div>
 		);
 	}
 
 	return (
-		<CustomerLayout
-			title="Service Evaluation"
-			description="Rate your service experience"
-		>
-			<div className="max-w-4xl mx-auto space-y-6">
+		<div className="max-w-4xl mx-auto space-y-6">
 				{/* Transaction Info Banner */}
 				{transactionInfo && (
 					<Card className="border-2 border-blue-200 bg-blue-50">
@@ -762,7 +748,6 @@ export default function ServiceEvaluationPage() {
 						</div>
 					</CardContent>
 				</Card>
-			</div>
-		</CustomerLayout>
+		</div>
 	);
 }

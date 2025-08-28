@@ -38,7 +38,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
 		<div
 			className={cn(
 				"bg-white border-r border-border flex flex-col transition-all duration-300 h-full",
-				collapsed ? "w-16" : "w-64"
+				collapsed ? "w-20" : "w-64"
 			)}
 		>
 			{/* Header */}
@@ -84,6 +84,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
 									href={item.href}
 									className={cn(
 										"flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+										collapsed && "justify-center px-2",
 										isActive
 											? "bg-primary text-primary-foreground"
 											: "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -120,7 +121,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
 					size="sm"
 					className={cn(
 						"w-full justify-start text-muted-foreground hover:text-foreground",
-						collapsed && "justify-center"
+						collapsed && "justify-center px-2"
 					)}
 				>
 					<LogOut className="w-4 h-4" />

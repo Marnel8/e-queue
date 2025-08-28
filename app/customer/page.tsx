@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CustomerLayout } from "@/components/customer/layout";
+
 import {
 	Card,
 	CardContent,
@@ -203,11 +203,7 @@ export default function CustomerDashboard() {
 	};
 
 	return (
-		<CustomerLayout
-			title="My Queue"
-			description="Monitor your queue status and manage tickets"
-		>
-			<div className="space-y-6">
+		<div className="space-y-6">
 				{hasPendingEvaluation && (
 					<div className="p-4 border-2 border-yellow-300 bg-yellow-50 rounded">
 						<p className="text-sm text-yellow-800 font-medium">
@@ -572,7 +568,6 @@ export default function CustomerDashboard() {
 					onClose={() => setShowQRScanner(false)}
 					onScanResult={handleQRScanResult}
 				/>
-			</div>
-		</CustomerLayout>
+		</div>
 	);
 }
