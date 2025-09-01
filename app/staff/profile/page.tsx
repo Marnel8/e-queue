@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import {
 	Card,
@@ -76,6 +76,7 @@ export default function StaffProfile() {
 		address: staffProfile.address,
 		bio: staffProfile.bio,
 	});
+	const [mounted, setMounted] = useState(false);
 
 	const handleSave = () => {
 		// TODO: Implement save functionality
@@ -94,6 +95,10 @@ export default function StaffProfile() {
 		});
 		setIsEditing(false);
 	};
+
+	useEffect(() => {
+		setMounted(true);
+	}, []);
 
 	return (
 		<div className="space-y-6">
@@ -373,7 +378,9 @@ export default function StaffProfile() {
 								<div>
 									<p className="text-sm text-gray-600">Hire Date</p>
 									<p className="font-medium">
-										{new Date(staffProfile.hireDate).toLocaleDateString()}
+										{mounted
+											? new Date(staffProfile.hireDate).toLocaleDateString()
+											: staffProfile.hireDate}
 									</p>
 								</div>
 							</div>

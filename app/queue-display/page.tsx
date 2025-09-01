@@ -36,6 +36,7 @@ export default function QueueDisplayPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [mounted, setMounted] = useState(false);
 
   // Fetch queue data
   const fetchQueueData = async () => {
@@ -59,6 +60,7 @@ export default function QueueDisplayPage() {
   };
 
   useEffect(() => {
+    setMounted(true);
     fetchQueueData();
     
     // Refresh data every 30 seconds
@@ -85,20 +87,20 @@ export default function QueueDisplayPage() {
           Registrar Office Queue Display
         </h1>
         <p className="text-xl text-gray-600">
-          {currentTime.toLocaleDateString('en-US', { 
+          {mounted ? currentTime.toLocaleDateString('en-US', { 
             weekday: 'long', 
             year: 'numeric', 
             month: 'long', 
             day: 'numeric' 
-          })}
+          }) : "Loading..."}
         </p>
         <p className="text-3xl font-mono font-bold text-blue-600 mt-2">
-          {currentTime.toLocaleTimeString('en-US', { 
+          {mounted ? currentTime.toLocaleTimeString('en-US', { 
             hour12: false, 
             hour: '2-digit', 
             minute: '2-digit', 
             second: '2-digit' 
-          })}
+          }) : "Loading..."}
         </p>
       </div>
 

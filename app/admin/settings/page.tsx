@@ -20,7 +20,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Save, RefreshCw, SettingsIcon, Users, Shield } from "lucide-react";
+import { Save, RefreshCw, SettingsIcon, Users } from "lucide-react";
 
 export default function SettingsPage() {
 	const [settings, setSettings] = useState({
@@ -33,15 +33,8 @@ export default function SettingsPage() {
 
 		// Queue Settings
 		maxQueueSize: 100,
-		autoAdvanceQueue: true,
 		voiceNotifications: true,
 		notificationLanguage: "english",
-
-		// Security Settings
-		sessionTimeout: 30,
-		passwordMinLength: 8,
-		requireEmailVerification: true,
-		maxLoginAttempts: 5,
 	});
 
 	const handleSettingChange = (key: string, value: any) => {
@@ -206,21 +199,6 @@ export default function SettingsPage() {
 
 							<div className="flex items-center justify-between">
 								<div className="space-y-0.5">
-									<Label>Auto-Advance Queue</Label>
-									<p className="text-sm text-gray-600">
-										Automatically move to next customer after completion
-									</p>
-								</div>
-								<Switch
-									checked={settings.autoAdvanceQueue}
-									onCheckedChange={(checked) =>
-										handleSettingChange("autoAdvanceQueue", checked)
-									}
-								/>
-							</div>
-
-							<div className="flex items-center justify-between">
-								<div className="space-y-0.5">
 									<Label>Voice Notifications</Label>
 									<p className="text-sm text-gray-600">
 										Enable voice announcements for queue updates
@@ -230,86 +208,6 @@ export default function SettingsPage() {
 									checked={settings.voiceNotifications}
 									onCheckedChange={(checked) =>
 										handleSettingChange("voiceNotifications", checked)
-									}
-								/>
-							</div>
-						</CardContent>
-					</Card>
-
-					{/* Security Settings */}
-					<Card>
-						<CardHeader>
-							<CardTitle className="flex items-center">
-								<Shield className="w-5 h-5 mr-2" />
-								Security Settings
-							</CardTitle>
-							<CardDescription>
-								Configure authentication and security policies
-							</CardDescription>
-						</CardHeader>
-						<CardContent className="space-y-6">
-							<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-								<div className="space-y-2">
-									<Label htmlFor="sessionTimeout">
-										Session Timeout (minutes)
-									</Label>
-									<Input
-										id="sessionTimeout"
-										type="number"
-										value={settings.sessionTimeout}
-										onChange={(e) =>
-											handleSettingChange(
-												"sessionTimeout",
-												Number.parseInt(e.target.value)
-											)
-										}
-									/>
-								</div>
-								<div className="space-y-2">
-									<Label htmlFor="passwordMinLength">
-										Minimum Password Length
-									</Label>
-									<Input
-										id="passwordMinLength"
-										type="number"
-										value={settings.passwordMinLength}
-										onChange={(e) =>
-											handleSettingChange(
-												"passwordMinLength",
-												Number.parseInt(e.target.value)
-											)
-										}
-									/>
-								</div>
-							</div>
-
-							<div className="space-y-2">
-								<Label htmlFor="maxLoginAttempts">Maximum Login Attempts</Label>
-								<Input
-									id="maxLoginAttempts"
-									type="number"
-									value={settings.maxLoginAttempts}
-									onChange={(e) =>
-										handleSettingChange(
-											"maxLoginAttempts",
-											Number.parseInt(e.target.value)
-										)
-									}
-									className="w-full md:w-1/2"
-								/>
-							</div>
-
-							<div className="flex items-center justify-between">
-								<div className="space-y-0.5">
-									<Label>Require Email Verification</Label>
-									<p className="text-sm text-gray-600">
-										Users must verify email before account activation
-									</p>
-								</div>
-								<Switch
-									checked={settings.requireEmailVerification}
-									onCheckedChange={(checked) =>
-										handleSettingChange("requireEmailVerification", checked)
 									}
 								/>
 							</div>

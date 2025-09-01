@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 
 import {
 	Card,
@@ -67,6 +67,7 @@ export default function CustomerDashboard() {
 		staffCourtesy: 5,
 		overallExperience: 5,
 	});
+	const [mounted, setMounted] = useState(false);
 
 	const handleCancelTicket = () => {
 		// TODO: Implement cancel ticket logic
@@ -136,11 +137,10 @@ export default function CustomerDashboard() {
 	// Generate QR code data for evaluation
 	const generateQRCodeData = () => {
 		const qrData = {
-			type: "service_evaluation",
 			ticketNumber: currentTicket?.ticketNumber || "A015",
 			office: "Registrar Office",
 			service: currentTicket?.service || "General Service",
-			timestamp: new Date().toISOString(),
+			timestamp: mounted ? new Date().toISOString() : "Loading...",
 			evaluationUrl: `${window.location.origin}/customer/evaluation?ticket=${
 				currentTicket?.ticketNumber || "A015"
 			}`,
@@ -149,6 +149,7 @@ export default function CustomerDashboard() {
 	};
 
 	useEffect(() => {
+		setMounted(true);
 		if (typeof window === "undefined") return;
 
 		// Only show pending evaluation if it's explicitly set to true

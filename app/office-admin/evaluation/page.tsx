@@ -96,7 +96,7 @@ export default function EvaluationPage() {
 	const [formToPreview, setFormToPreview] = useState<EvaluationForm | null>(
 		null
 	);
-	const [isMounted, setIsMounted] = useState(false);
+	const [mounted, setMounted] = useState(false);
 	const [activeTab, setActiveTab] = useState("forms");
 	const [searchTerm, setSearchTerm] = useState("");
 	const [filterService, setFilterService] = useState("all");
@@ -281,7 +281,7 @@ export default function EvaluationPage() {
 	};
 
 	useEffect(() => {
-		setIsMounted(true);
+		setMounted(true);
 		loadEvaluationForms();
 		loadEvaluationResponses();
 	}, []);
@@ -902,7 +902,7 @@ export default function EvaluationPage() {
 		setShowPreviewModal(true);
 	};
 
-	if (!isMounted) {
+	if (!mounted) {
 		return (
 			<div className="min-h-screen bg-background flex items-center justify-center">
 				<div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
@@ -1074,7 +1074,9 @@ export default function EvaluationPage() {
 														</div>
 														<p className="text-xs text-gray-500">
 															{form.questions.length} questions • Created{" "}
-															{new Date(form.createdAt).toLocaleDateString()}
+															{mounted
+																? new Date(form.createdAt).toLocaleDateString()
+																: form.createdAt}
 														</p>
 													</div>
 													<div className="flex gap-2">
@@ -1701,9 +1703,11 @@ export default function EvaluationPage() {
 																				</div>
 																			)}
 																			<span className="text-xs text-gray-500">
-																				{new Date(
-																					response.submittedAt
-																				).toLocaleDateString()}
+																				{mounted
+																					? new Date(
+																							response.submittedAt
+																					  ).toLocaleDateString()
+																					: response.submittedAt}
 																			</span>
 																		</div>
 																	</div>
@@ -2149,13 +2153,17 @@ export default function EvaluationPage() {
 														<div className="flex items-center gap-2 text-xs text-gray-500">
 															<Calendar className="w-3 h-3" />
 															Submitted{" "}
-															{new Date(
-																response.submittedAt
-															).toLocaleDateString()}{" "}
+															{mounted
+																? new Date(
+																		response.submittedAt
+																  ).toLocaleDateString()
+																: response.submittedAt}{" "}
 															at{" "}
-															{new Date(
-																response.submittedAt
-															).toLocaleTimeString()}
+															{mounted
+																? new Date(
+																		response.submittedAt
+																  ).toLocaleTimeString()
+																: "Loading..."}
 														</div>
 													</div>
 												</div>

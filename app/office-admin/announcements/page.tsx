@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -12,9 +12,7 @@ import { Switch } from "@/components/ui/switch"
 import { Plus, Megaphone, Calendar, Eye, Edit, Trash2, Send } from "lucide-react"
 
 export default function AnnouncementsPage() {
-  const [showCreateForm, setShowCreateForm] = useState(false)
-
-  const announcements = [
+  const [announcements, setAnnouncements] = useState([
     {
       id: 1,
       title: "System Maintenance Notice",
@@ -67,7 +65,13 @@ export default function AnnouncementsPage() {
       views: 156,
       createdBy: "Maria Santos",
     },
-  ]
+  ])
+  const [showCreateForm, setShowCreateForm] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const getTypeColor = (type: string) => {
     switch (type) {
@@ -313,11 +317,11 @@ export default function AnnouncementsPage() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
                   <div>
                     <p className="text-gray-600">Published</p>
-                    <p className="font-semibold">{new Date(announcement.publishDate).toLocaleDateString()}</p>
+                    <p className="font-semibold">{mounted ? new Date(announcement.publishDate).toLocaleDateString() : announcement.publishDate}</p>
                   </div>
                   <div>
                     <p className="text-gray-600">Expires</p>
-                    <p className="font-semibold">{new Date(announcement.expiryDate).toLocaleDateString()}</p>
+                    <p className="font-semibold">{mounted ? new Date(announcement.expiryDate).toLocaleDateString() : announcement.expiryDate}</p>
                   </div>
                   <div>
                     <p className="text-gray-600">Views</p>

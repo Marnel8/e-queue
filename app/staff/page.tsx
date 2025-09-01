@@ -163,6 +163,7 @@ export default function StaffDashboard() {
 	const [qrCodeScanned, setQrCodeScanned] = useState(false);
 	const [showImageModal, setShowImageModal] = useState(false);
 	const [selectedImage, setSelectedImage] = useState<string | null>(null);
+	const [mounted, setMounted] = useState(false);
 
 	// Text-to-speech function to announce next customer
 	const announceNextCustomer = (
@@ -262,6 +263,7 @@ export default function StaffDashboard() {
 	// Prevent hydration mismatch by only rendering after mount
 	useEffect(() => {
 		setIsMounted(true);
+		setMounted(true);
 	}, []);
 
 	useEffect(() => {
@@ -348,7 +350,7 @@ export default function StaffDashboard() {
 		// Create archived customer record
 		const archivedCustomer = {
 			...customer,
-			deletedAt: new Date().toLocaleString(),
+			deletedAt: mounted ? new Date().toLocaleString() : "Loading...",
 			deletedBy: currentStaff.name,
 			deletionReason: reason,
 			status: "Archived",
@@ -476,7 +478,9 @@ export default function StaffDashboard() {
 								</div>
 								<p className="text-xs text-muted-foreground">
 									Since:{" "}
-									{new Date(currentStaff.assignedAt).toLocaleTimeString()}
+									{mounted
+										? new Date(currentStaff.assignedAt).toLocaleTimeString()
+										: "Loading..."}
 								</p>
 							</div>
 						</div>

@@ -67,8 +67,10 @@ export function ViolationsDisplay({
 	const [severityFilter, setSeverityFilter] = useState("all");
 	const [typeFilter, setTypeFilter] = useState("all");
 	const [violations, setViolations] = useState<Violation[]>([]);
+	const [mounted, setMounted] = useState(false);
 
 	useEffect(() => {
+		setMounted(true);
 		// Get violations from localStorage
 		if (typeof window !== "undefined") {
 			try {
@@ -273,7 +275,7 @@ export function ViolationsDisplay({
 									</TableCell>
 									<TableCell>
 										<div className="text-sm">
-											{new Date(violation.date).toLocaleDateString()}
+											{mounted ? new Date(violation.date).toLocaleDateString() : violation.date}
 										</div>
 									</TableCell>
 									<TableCell>

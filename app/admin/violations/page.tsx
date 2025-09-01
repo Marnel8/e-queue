@@ -113,6 +113,7 @@ export default function ViolationsPage() {
 	const [statusFilter, setStatusFilter] = useState("all");
 	const [severityFilter, setSeverityFilter] = useState("all");
 	const [typeFilter, setTypeFilter] = useState("all");
+	const [mounted, setMounted] = useState(false);
 
 	// Get dynamic violations from localStorage
 	let dynamic: Array<{
@@ -140,7 +141,7 @@ export default function ViolationsPage() {
 		severity: d.type === "login_attempts_exceeded" ? "high" : "medium",
 		type: d.type === "login_attempts_exceeded" ? "security" : "compliance",
 		details: d.detail,
-		lastActivity: new Date(d.when).toLocaleString(),
+		lastActivity: mounted ? new Date(d.when).toLocaleString() : d.when,
 	}));
 
 	const violators = [...violatorsSeed, ...dynamicRows];
@@ -233,6 +234,10 @@ export default function ViolationsPage() {
 		highSeverity: violators.filter((v) => v.severity === "high").length,
 		securityViolations: violators.filter((v) => v.type === "security").length,
 	};
+
+	useEffect(() => {
+		setMounted(true);
+	}, []);
 
 	return (
 		<div className="space-y-6">

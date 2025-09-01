@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import {
 	Card,
@@ -72,6 +72,11 @@ export default function WalkInRegistration() {
 	});
 	const [isSubmitted, setIsSubmitted] = useState(false);
 	const [ticketNumber, setTicketNumber] = useState("");
+	const [mounted, setMounted] = useState(false);
+
+	useEffect(() => {
+		setMounted(true);
+	}, []);
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
@@ -148,7 +153,7 @@ export default function WalkInRegistration() {
 										</p>
 									</div>
 									<div className="text-xs text-muted-foreground">
-										<p>Issued: {new Date().toLocaleString()}</p>
+										<p>Issued: {mounted ? new Date().toLocaleString() : "Loading..."}</p>
 										<p>Registrar Office - OMSC Mamburao Campus</p>
 									</div>
 								</div>
