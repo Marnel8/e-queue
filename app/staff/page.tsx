@@ -34,6 +34,9 @@ import {
 	Monitor,
 	MessageSquare,
 	Star,
+	CalendarDays,
+	Clock4,
+	Archive,
 } from "lucide-react";
 import QRCode from "react-qr-code";
 
@@ -52,6 +55,9 @@ const queueData = [
 		priorityLaneImage: null, // No image for regular priority
 		deskId: 1,
 		assignedStaff: "Ana Rodriguez",
+		customerType: "Appointment", // Walk-in or Appointment
+		appointmentDate: "2024-01-15",
+		walkInTime: null,
 	},
 	{
 		id: 2,
@@ -67,6 +73,9 @@ const queueData = [
 		priorityLaneImage: null,
 		deskId: 1,
 		assignedStaff: "Ana Rodriguez",
+		customerType: "Walk-in",
+		appointmentDate: null,
+		walkInTime: "9:15 AM",
 	},
 	{
 		id: 3,
@@ -82,6 +91,9 @@ const queueData = [
 		priorityLaneImage: "/images/priority-lane-sample.jpg", // Sample image for priority customer
 		deskId: 2,
 		assignedStaff: "Carlos Mendoza",
+		customerType: "Appointment",
+		appointmentDate: "2024-01-15",
+		walkInTime: null,
 	},
 	{
 		id: 4,
@@ -97,6 +109,9 @@ const queueData = [
 		priorityLaneImage: null,
 		deskId: 1,
 		assignedStaff: "Ana Rodriguez",
+		customerType: "Walk-in",
+		appointmentDate: null,
+		walkInTime: "9:45 AM",
 	},
 ];
 
@@ -118,6 +133,12 @@ const getPriorityBadge = (priority: string) => {
 		: "bg-gray-100 text-gray-800";
 };
 
+const getCustomerTypeBadge = (customerType: string) => {
+	return customerType === "Appointment"
+		? "bg-blue-100 text-blue-800"
+		: "bg-orange-100 text-orange-800";
+};
+
 export default function StaffDashboard() {
 	// Staff assignment management
 	const [currentStaff, setCurrentStaff] = useState({
@@ -133,7 +154,9 @@ export default function StaffDashboard() {
 	const deskQueueData = queueData.filter(
 		(ticket) => ticket.deskId === currentStaff.deskId
 	);
-	const [currentQueue, setCurrentQueue] = useState(deskQueueData[0] || null);
+	const [currentQueue, setCurrentQueue] = useState<any>(
+		deskQueueData[0] || null
+	);
 	const [queueList, setQueueList] = useState(deskQueueData.slice(1));
 	const [evaluationScanned, setEvaluationScanned] = useState(false);
 	const [isMounted, setIsMounted] = useState(false);
@@ -153,7 +176,25 @@ export default function StaffDashboard() {
 			utterance.rate = 0.9;
 			utterance.pitch = 1.0;
 			utterance.volume = 1.0;
-			window.speechSynthesis.speak(utterance);
+
+			// Announce 3 times with 5-second intervals
+			let announcementCount = 0;
+			const maxAnnouncements = 3;
+
+			const speak = () => {
+				if (announcementCount < maxAnnouncements) {
+					window.speechSynthesis.speak(utterance);
+					announcementCount++;
+
+					// Schedule next announcement after 5 seconds
+					if (announcementCount < maxAnnouncements) {
+						setTimeout(speak, 5000);
+					}
+				}
+			};
+
+			// Start the first announcement
+			speak();
 		}
 	};
 
@@ -282,39 +323,59 @@ export default function StaffDashboard() {
 	};
 
 	const handleHold = () => {
-		// Move current to end of queue with hold status
-		const heldCustomer = { ...currentQueue, status: "Hold" };
-		if (queueList.length > 0) {
-			setCurrentQueue(queueList[0]);
-			setQueueList([...queueList.slice(1), heldCustomer]);
+		// Hold the current customer (don't move them, just mark as hold)
+		if (currentQueue) {
+			setCurrentQueue({ ...currentQueue, status: "Hold" });
 		}
 	};
 
 	const handleSkip = () => {
 		// Skip current customer
 		if (queueList.length > 0) {
-			setCurrentQueue(queueList[0]);
+			const nextCustomer = queueList[0];
+			setCurrentQueue(nextCustomer);
 			setQueueList(queueList.slice(1));
+
+			// Announce next customer after skipping
+			announceNextCustomer(
+				nextCustomer.customerName,
+				nextCustomer.ticketNumber
+			);
 		}
 	};
 
-	const handleDone = () => {
-		if (currentQueue) {
-			// Move to next customer
+	const handleMoveToArchives = (customer: any, reason: string) => {
+		// Create archived customer record
+		const archivedCustomer = {
+			...customer,
+			deletedAt: new Date().toLocaleString(),
+			deletedBy: currentStaff.name,
+			deletionReason: reason,
+			status: "Archived",
+		};
+
+		// In a real app, this would be sent to an API
+		console.log("Moving customer to archives:", archivedCustomer);
+
+		// Remove customer from current queue
+		if (currentQueue && currentQueue.id === customer.id) {
+			// If it's the current customer, move to next
 			if (queueList.length > 0) {
 				const nextCustomer = queueList[0];
 				setCurrentQueue(nextCustomer);
 				setQueueList(queueList.slice(1));
-
-				// Announce next customer after a short delay
-				setTimeout(() => {
-					announceNextCustomer(
-						nextCustomer.customerName,
-						nextCustomer.ticketNumber
-					);
-				}, 1000);
+			} else {
+				setCurrentQueue(null as any);
 			}
+		} else {
+			// Remove from queue list
+			setQueueList(queueList.filter((c) => c.id !== customer.id));
 		}
+
+		// Show success message (in real app, this would be a toast notification)
+		alert(
+			`Customer ${customer.customerName} (${customer.ticketNumber}) has been moved to archives.`
+		);
 	};
 
 	// Image viewer functions
@@ -522,11 +583,16 @@ export default function StaffDashboard() {
 						<CardContent className="p-4">
 							<div className="flex items-center justify-between">
 								<div>
-									<p className="text-sm text-gray-600">Avg Wait Time</p>
-									<p className="text-2xl font-bold text-[#071952]">12m</p>
+									<p className="text-sm text-gray-600">Appointments</p>
+									<p className="text-2xl font-bold text-[#071952]">
+										{
+											queueList.filter((c) => c.customerType === "Appointment")
+												.length
+										}
+									</p>
 								</div>
-								<div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-									<Clock className="w-5 h-5 text-green-600" />
+								<div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+									<CalendarDays className="w-5 h-5 text-blue-600" />
 								</div>
 							</div>
 						</CardContent>
@@ -536,11 +602,16 @@ export default function StaffDashboard() {
 						<CardContent className="p-4">
 							<div className="flex items-center justify-between">
 								<div>
-									<p className="text-sm text-gray-600">Today Served</p>
-									<p className="text-2xl font-bold text-[#071952]">23</p>
+									<p className="text-sm text-gray-600">Walk-ins</p>
+									<p className="text-2xl font-bold text-[#071952]">
+										{
+											queueList.filter((c) => c.customerType === "Walk-in")
+												.length
+										}
+									</p>
 								</div>
-								<div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-									<CheckCircle className="w-5 h-5 text-blue-600" />
+								<div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+									<Clock4 className="w-5 h-5 text-orange-600" />
 								</div>
 							</div>
 						</CardContent>
@@ -581,6 +652,13 @@ export default function StaffDashboard() {
 												<Badge className={getStatusBadge(currentQueue.status)}>
 													{currentQueue.status}
 												</Badge>
+												<Badge
+													className={getCustomerTypeBadge(
+														currentQueue.customerType
+													)}
+												>
+													{currentQueue.customerType}
+												</Badge>
 											</div>
 											<p className="text-muted-foreground">
 												{currentQueue.service}
@@ -597,10 +675,22 @@ export default function StaffDashboard() {
 											<span className="truncate">{currentQueue.email}</span>
 										</div>
 										<div className="flex items-center gap-2 text-sm">
-											<Calendar className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-											<span className="truncate">
-												Booked for {currentQueue.bookedTime}
-											</span>
+											{currentQueue.customerType === "Appointment" ? (
+												<>
+													<CalendarDays className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+													<span className="truncate">
+														Appointment: {currentQueue.appointmentDate} at{" "}
+														{currentQueue.bookedTime}
+													</span>
+												</>
+											) : (
+												<>
+													<Clock4 className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+													<span className="truncate">
+														Walk-in at {currentQueue.walkInTime}
+													</span>
+												</>
+											)}
 										</div>
 									</div>
 								</div>
@@ -680,38 +770,110 @@ export default function StaffDashboard() {
 								)}
 
 								{/* Queue Controls */}
-								<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4">
-									<Button
-										onClick={handleDone}
-										className="gradient-primary text-white"
-									>
-										<CheckCircle className="w-4 h-4 mr-2" />
-										Mark Complete
-									</Button>
-									<Button
-										onClick={handleNext}
-										variant="outline"
-										className="bg-transparent"
-									>
-										<Play className="w-4 h-4 mr-2" />
-										Next
-									</Button>
-									<Button
-										onClick={handleHold}
-										variant="outline"
-										className="bg-transparent"
-									>
-										<Pause className="w-4 h-4 mr-2" />
-										Hold
-									</Button>
-									<Button
-										onClick={handleSkip}
-										variant="outline"
-										className="bg-transparent"
-									>
-										<SkipForward className="w-4 h-4 mr-2" />
-										Skip
-									</Button>
+								<div className="bg-gradient-to-br from-gray-50 to-blue-50 rounded-2xl border border-gray-200 shadow-sm">
+									<div className="px-6 py-4">
+										<h4 className="text-lg font-bold text-gray-800 mb-4 flex items-center justify-center gap-3">
+											<div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
+												<Play className="w-4 h-4 text-blue-600" />
+											</div>
+											Queue Management Controls
+										</h4>
+
+										<div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-4">
+											<div className="relative group">
+												<Button
+													onClick={handleNext}
+													className="w-full bg-gradient-to-br from-emerald-500 to-emerald-600 cursor-pointer hover:from-emerald-600 hover:to-emerald-700 text-white h-32 text-lg font-bold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 border-0 rounded-2xl"
+												>
+													<div className="flex flex-col items-center gap-2">
+														<div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+															<Play className="w-7 h-7" />
+														</div>
+														<span>Next Customer</span>
+													</div>
+												</Button>
+												<div className="absolute -top-2 -right-2 w-6 h-6 bg-emerald-400 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+													<span className="text-white text-xs font-bold">
+														→
+													</span>
+												</div>
+											</div>
+
+											<div className="relative group">
+												<Button
+													onClick={handleHold}
+													className="w-full bg-gradient-to-br from-amber-500 to-amber-600 cursor-pointer hover:from-amber-600 hover:to-amber-700 text-white h-32 text-lg font-bold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 border-0 rounded-2xl"
+												>
+													<div className="flex flex-col items-center gap-2">
+														<div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+															<Pause className="w-7 h-7" />
+														</div>
+														<span>Hold Customer</span>
+													</div>
+												</Button>
+												<div className="absolute -top-2 -right-2 w-6 h-6 bg-amber-400 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+													<span className="text-white text-xs font-bold">
+														⏸
+													</span>
+												</div>
+											</div>
+
+											<div className="relative group">
+												<Button
+													onClick={handleSkip}
+													className="w-full bg-gradient-to-br from-red-500 to-red-600 cursor-pointer hover:from-red-600 hover:to-red-700 text-white h-32 text-lg font-bold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 border-0 rounded-2xl"
+												>
+													<div className="flex flex-col items-center gap-2">
+														<div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+															<SkipForward className="w-7 h-7" />
+														</div>
+														<span>Skip Customer</span>
+													</div>
+												</Button>
+												<div className="absolute -top-2 -right-2 w-6 h-6 bg-red-400 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+													<span className="text-white text-xs font-bold">
+														⏭
+													</span>
+												</div>
+											</div>
+
+											<div className="relative group">
+												<Button
+													onClick={() => {
+														const reason = prompt(
+															"Please provide a reason for archiving this customer:"
+														);
+														if (reason && currentQueue) {
+															handleMoveToArchives(currentQueue, reason);
+														}
+													}}
+													className="w-full bg-gradient-to-br from-orange-500 to-orange-600 cursor-pointer hover:from-orange-600 hover:to-orange-700 text-white h-32 text-lg font-bold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 border-0 rounded-2xl"
+												>
+													<div className="flex flex-col items-center gap-2">
+														<div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+															<Archive className="w-7 h-7" />
+														</div>
+														<span>Move to Archives</span>
+													</div>
+												</Button>
+												<div className="absolute -top-2 -right-2 w-6 h-6 bg-orange-400 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+													<span className="text-white text-xs font-bold">
+														📁
+													</span>
+												</div>
+											</div>
+										</div>
+
+										<div className="text-center">
+											<div className="inline-flex items-center gap-2 px-4 py-2 bg-white/60 rounded-full border border-gray-200">
+												<div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+												<p className="text-xs font-medium text-gray-700">
+													Use these controls to manage the current customer and
+													advance the queue
+												</p>
+											</div>
+										</div>
+									</div>
 								</div>
 
 								{/* QR Code Display Section - Right below current customer */}
@@ -782,7 +944,21 @@ export default function StaffDashboard() {
 							<Users className="w-5 h-5 text-blue-600" />
 							Waiting Queue
 						</CardTitle>
-						<CardDescription>Customers waiting to be served</CardDescription>
+						<CardDescription>
+							Customers waiting to be served
+							{queueList.length > 0 && (
+								<span className="ml-2 text-sm">
+									(
+									{
+										queueList.filter((c) => c.customerType === "Appointment")
+											.length
+									}{" "}
+									appointments,{" "}
+									{queueList.filter((c) => c.customerType === "Walk-in").length}{" "}
+									walk-ins)
+								</span>
+							)}
+						</CardDescription>
 					</CardHeader>
 					<CardContent>
 						<div className="space-y-3 max-h-96 overflow-y-auto">
@@ -805,15 +981,42 @@ export default function StaffDashboard() {
 												<p className="text-sm text-muted-foreground truncate">
 													{customer.service}
 												</p>
-												{customer.priority === "Priority" &&
-													customer.priorityLaneImage && (
-														<div className="flex items-center gap-2 mt-1">
-															<ImageIcon className="w-3 h-3 text-amber-600" />
-															<span className="text-xs text-amber-600 font-medium">
-																Has Priority Image
+												<div className="flex items-center gap-2 mt-1">
+													<Badge
+														className={getCustomerTypeBadge(
+															customer.customerType
+														)}
+													>
+														{customer.customerType}
+													</Badge>
+													{customer.priority === "Priority" &&
+														customer.priorityLaneImage && (
+															<div className="flex items-center gap-2">
+																<ImageIcon className="w-3 h-3 text-amber-600" />
+																<span className="text-xs text-amber-600 font-medium">
+																	Has Priority Image
+																</span>
+															</div>
+														)}
+												</div>
+												<div className="flex items-center gap-2 mt-1">
+													{customer.customerType === "Appointment" ? (
+														<>
+															<CalendarDays className="w-3 h-3 text-muted-foreground" />
+															<span className="text-xs text-muted-foreground">
+																Appt: {customer.appointmentDate} at{" "}
+																{customer.bookedTime}
 															</span>
-														</div>
+														</>
+													) : (
+														<>
+															<Clock4 className="w-3 h-3 text-muted-foreground" />
+															<span className="text-xs text-muted-foreground">
+																Walk-in at {customer.walkInTime}
+															</span>
+														</>
 													)}
+												</div>
 											</div>
 										</div>
 										<div className="text-left sm:text-right flex-shrink-0">
@@ -823,6 +1026,22 @@ export default function StaffDashboard() {
 											<p className="text-xs text-muted-foreground mt-1">
 												{customer.waitTime}
 											</p>
+											<Button
+												onClick={() => {
+													const reason = prompt(
+														"Please provide a reason for archiving this customer:"
+													);
+													if (reason) {
+														handleMoveToArchives(customer, reason);
+													}
+												}}
+												variant="outline"
+												size="sm"
+												className="mt-2 text-orange-600 hover:text-orange-700 border-orange-300 hover:border-orange-400"
+											>
+												<Archive className="w-3 h-3 mr-1" />
+												Archive
+											</Button>
 										</div>
 									</div>
 								))

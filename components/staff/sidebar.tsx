@@ -14,12 +14,14 @@ import {
 	MessageSquare,
 	User,
 	UserPlus,
+	Archive,
 	X,
 } from "lucide-react";
 
 const navigation = [
 	{ name: "Queue Dashboard", href: "/staff", icon: LayoutDashboard },
 	{ name: "Walk-in Registration", href: "/staff/walk-in", icon: UserPlus },
+	{ name: "Archives", href: "/staff/archives", icon: Archive },
 	// Feedback moved under Office Admin per policy
 	{ name: "Profile", href: "/staff/profile", icon: User },
 ];
@@ -27,6 +29,7 @@ const navigation = [
 const mobileNavigation = [
 	{ name: "Queue", href: "/staff", icon: LayoutDashboard },
 	{ name: "Walk-in", href: "/staff/walk-in", icon: UserPlus },
+	{ name: "Archives", href: "/staff/archives", icon: Archive },
 	// Feedback moved to Office Admin
 	{ name: "Profile", href: "/staff/profile", icon: User },
 ];

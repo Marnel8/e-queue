@@ -28,41 +28,7 @@ import {
 } from "lucide-react";
 
 export default function FeedbackFormsPage() {
-	const [activeTab, setActiveTab] = useState("forms");
-
-	// Using the same data as staff page
-	const feedbackForms = [
-		{
-			id: 1,
-			title: "Service Quality Assessment",
-			description: "Evaluate overall service quality and staff performance",
-			questions: 8,
-			responses: 345, // Total feedback from staff page
-			avgRating: 4.6, // Average rating from staff page
-			status: "active",
-			createdAt: "2024-01-15",
-		},
-		{
-			id: 2,
-			title: "Wait Time Feedback",
-			description: "Assess customer satisfaction with waiting times",
-			questions: 5,
-			responses: 189,
-			avgRating: 4.6,
-			status: "active",
-			createdAt: "2024-01-10",
-		},
-		{
-			id: 3,
-			title: "Facility Cleanliness",
-			description: "Rate the cleanliness and comfort of office facilities",
-			questions: 6,
-			responses: 156,
-			avgRating: 4.6,
-			status: "draft",
-			createdAt: "2024-01-08",
-		},
-	];
+	const [activeTab, setActiveTab] = useState("recent");
 
 	// Using the exact same recent feedback data as staff page
 	const recentFeedback = [
@@ -108,24 +74,13 @@ export default function FeedbackFormsPage() {
 		}
 	};
 
-	const getStatusColor = (status: string) => {
-		switch (status) {
-			case "active":
-				return "bg-green-100 text-green-800";
-			case "draft":
-				return "bg-gray-100 text-gray-800";
-			default:
-				return "bg-blue-100 text-blue-800";
-		}
-	};
-
 	return (
 		<div className="space-y-6">
 			{/* Page Header */}
 			<div>
-				<h1 className="text-2xl font-bold text-gray-900">Feedback Forms</h1>
+				<h1 className="text-2xl font-bold text-gray-900">System Evaluation</h1>
 				<p className="text-gray-600">
-					View and manage existing feedback forms and customer feedback
+					View customer feedback and system evaluation analytics
 				</p>
 			</div>
 
@@ -134,90 +89,10 @@ export default function FeedbackFormsPage() {
 				onValueChange={setActiveTab}
 				className="space-y-6"
 			>
-				<TabsList className="grid w-full grid-cols-3">
-					<TabsTrigger value="forms">Feedback Forms</TabsTrigger>
+				<TabsList className="grid w-full grid-cols-2">
 					<TabsTrigger value="recent">Recent Feedback</TabsTrigger>
 					<TabsTrigger value="analytics">Analytics</TabsTrigger>
 				</TabsList>
-
-				{/* Feedback Forms Tab */}
-				<TabsContent value="forms" className="space-y-4">
-					<Card>
-						<CardHeader>
-							<CardTitle>Feedback Forms</CardTitle>
-							<CardDescription>
-								Manage your customer feedback forms
-							</CardDescription>
-						</CardHeader>
-						<CardContent>
-							<div className="space-y-4">
-								{feedbackForms.map((form) => (
-									<div
-										key={form.id}
-										className="border rounded-lg p-4 space-y-3"
-									>
-										<div className="flex items-start justify-between">
-											<div className="space-y-1">
-												<div className="flex items-center gap-2">
-													<h3 className="font-semibold text-gray-900">
-														{form.title}
-													</h3>
-													<Badge className={getStatusColor(form.status)}>
-														{form.status}
-													</Badge>
-												</div>
-												<p className="text-sm text-gray-600">
-													{form.description}
-												</p>
-											</div>
-											<div className="flex items-center gap-2">
-												<Button variant="ghost" size="sm">
-													<Eye className="w-4 h-4" />
-												</Button>
-												<Button variant="ghost" size="sm">
-													<Edit className="w-4 h-4" />
-												</Button>
-												<Button
-													variant="ghost"
-													size="sm"
-													className="text-red-600 hover:text-red-700"
-												>
-													<Trash2 className="w-4 h-4" />
-												</Button>
-											</div>
-										</div>
-
-										<div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
-											<div>
-												<p className="text-gray-600">Questions</p>
-												<p className="font-semibold">{form.questions}</p>
-											</div>
-											<div>
-												<p className="text-gray-600">Responses</p>
-												<p className="font-semibold">{form.responses}</p>
-											</div>
-											<div>
-												<p className="text-gray-600">Avg Rating</p>
-												<div className="flex items-center gap-1">
-													<Star className="w-4 h-4 text-yellow-500 fill-current" />
-													<span className="font-semibold">
-														{form.avgRating}
-													</span>
-												</div>
-											</div>
-											<div>
-												<p className="text-gray-600">Created</p>
-												<p className="font-semibold">
-													{new Date(form.createdAt).toLocaleDateString()}
-												</p>
-											</div>
-										</div>
-									</div>
-								))}
-							</div>
-						</CardContent>
-					</Card>
-				</TabsContent>
 
 				{/* Recent Feedback Tab */}
 				<TabsContent value="recent" className="space-y-4">
@@ -236,10 +111,10 @@ export default function FeedbackFormsPage() {
 											<SelectValue />
 										</SelectTrigger>
 										<SelectContent>
-											<SelectItem value="all">All Forms</SelectItem>
-											<SelectItem value="service">Service Quality</SelectItem>
-											<SelectItem value="wait">Wait Time</SelectItem>
-											<SelectItem value="facility">Facility</SelectItem>
+											<SelectItem value="all">All Services</SelectItem>
+											<SelectItem value="transcript">Transcript</SelectItem>
+											<SelectItem value="certificate">Certificate</SelectItem>
+											<SelectItem value="enrollment">Enrollment</SelectItem>
 										</SelectContent>
 									</Select>
 								</div>
