@@ -35,10 +35,6 @@ import {
 	TrendingUp,
 	Star,
 	MessageSquare,
-	Filter,
-	Search,
-	Calendar,
-	User,
 	Edit,
 	Trash2,
 } from "lucide-react";
@@ -98,9 +94,6 @@ export default function EvaluationPage() {
 	);
 	const [mounted, setMounted] = useState(false);
 	const [activeTab, setActiveTab] = useState("forms");
-	const [searchTerm, setSearchTerm] = useState("");
-	const [filterService, setFilterService] = useState("all");
-	const [filterDate, setFilterDate] = useState("all");
 	const [selectedFormForAnalytics, setSelectedFormForAnalytics] =
 		useState<string>("all");
 
@@ -377,30 +370,6 @@ export default function EvaluationPage() {
 		setEvaluationResponses(sampleResponses);
 	};
 
-	// Filtered responses based on search and filters
-	const filteredResponses = evaluationResponses.filter((response) => {
-		const matchesSearch =
-			response.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-			response.service.toLowerCase().includes(searchTerm.toLowerCase()) ||
-			response.staffMember.toLowerCase().includes(searchTerm.toLowerCase());
-
-		const matchesService =
-			filterService === "all" || response.service === filterService;
-
-		const matchesDate =
-			filterDate === "all" ||
-			(filterDate === "today" &&
-				new Date(response.submittedAt).toDateString() ===
-					new Date().toDateString()) ||
-			(filterDate === "week" &&
-				new Date(response.submittedAt) >
-					new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)) ||
-			(filterDate === "month" &&
-				new Date(response.submittedAt) >
-					new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
-
-		return matchesSearch && matchesService && matchesDate;
-	});
 
 	// Calculate analytics per form
 	const getFormAnalytics = (formId: string) => {
@@ -1987,218 +1956,6 @@ export default function EvaluationPage() {
 							</CardContent>
 						</Card>
 
-						{/* Filters and Search */}
-						<Card>
-							<CardHeader>
-								<CardTitle className="flex items-center gap-2">
-									<Filter className="w-5 h-5 text-blue-600" />
-									Filters & Search
-								</CardTitle>
-							</CardHeader>
-							<CardContent>
-								<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-									<div className="relative">
-										<Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-										<Input
-											placeholder="Search by name, service, or staff..."
-											value={searchTerm}
-											onChange={(e) => setSearchTerm(e.target.value)}
-											className="pl-10"
-										/>
-									</div>
-									<Select
-										value={filterService}
-										onValueChange={setFilterService}
-									>
-										<SelectTrigger>
-											<SelectValue placeholder="Filter by service" />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="all">All Services</SelectItem>
-											{availableServices.map((service) => (
-												<SelectItem key={service} value={service}>
-													{service}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-									<Select value={filterDate} onValueChange={setFilterDate}>
-										<SelectTrigger>
-											<SelectValue placeholder="Filter by date" />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="all">All Time</SelectItem>
-											<SelectItem value="today">Today</SelectItem>
-											<SelectItem value="week">This Week</SelectItem>
-											<SelectItem value="month">This Month</SelectItem>
-										</SelectContent>
-									</Select>
-								</div>
-							</CardContent>
-						</Card>
-
-						{/* Evaluation Results List */}
-						<Card>
-							<CardHeader>
-								<CardTitle className="flex items-center gap-2">
-									<BarChart3 className="w-5 h-5 text-blue-600" />
-									Evaluation Results
-								</CardTitle>
-								<CardDescription>
-									Customer feedback and evaluation responses
-								</CardDescription>
-							</CardHeader>
-							<CardContent>
-								<div className="space-y-4">
-									{filteredResponses.length > 0 ? (
-										filteredResponses.map((response) => (
-											<div
-												key={response.id}
-												className="border rounded-lg p-4 space-y-4"
-											>
-												<div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-													<div className="space-y-3 flex-1">
-														<div className="flex items-center gap-3">
-															<div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-																<User className="w-5 h-5 text-blue-600" />
-															</div>
-															<div>
-																<h3 className="font-semibold text-lg">
-																	{response.customerName}
-																</h3>
-																<p className="text-sm text-gray-500">
-																	{response.customerEmail}
-																</p>
-															</div>
-														</div>
-
-														<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-															<div>
-																<Label className="text-xs text-gray-500">
-																	Service
-																</Label>
-																<p className="font-medium">
-																	{response.service}
-																</p>
-															</div>
-															<div>
-																<Label className="text-xs text-gray-500">
-																	Staff Member
-																</Label>
-																<p className="font-medium">
-																	{response.staffMember}
-																</p>
-															</div>
-															<div>
-																<Label className="text-xs text-gray-500">
-																	Overall Rating
-																</Label>
-																<div className="flex items-center gap-1">
-																	<Star className="w-4 h-4 text-yellow-500 fill-current" />
-																	<span className="font-medium">
-																		{response.overallRating}/5
-																	</span>
-																</div>
-															</div>
-														</div>
-
-														{/* Question Responses */}
-														<div className="space-y-3">
-															<Label className="text-sm font-medium">
-																Responses:
-															</Label>
-															{response.responses.map((resp, index) => (
-																<div
-																	key={index}
-																	className="bg-gray-50 p-3 rounded-lg"
-																>
-																	<p className="text-sm font-medium text-gray-700 mb-2">
-																		{resp.question}
-																	</p>
-																	{resp.type === "rating" ? (
-																		<div className="flex items-center gap-1">
-																			<Star className="w-4 h-4 text-yellow-500 fill-current" />
-																			<span>{resp.answer}/5</span>
-																		</div>
-																	) : resp.type === "yes_no" ? (
-																		<Badge
-																			variant={
-																				resp.answer === "Yes"
-																					? "default"
-																					: "secondary"
-																			}
-																		>
-																			{resp.answer}
-																		</Badge>
-																	) : (
-																		<p className="text-sm text-gray-600">
-																			{resp.answer}
-																		</p>
-																	)}
-																</div>
-															))}
-														</div>
-
-														{response.comments && (
-															<div>
-																<Label className="text-sm font-medium">
-																	Additional Comments:
-																</Label>
-																<p className="text-sm text-gray-600 mt-1">
-																	{response.comments}
-																</p>
-															</div>
-														)}
-
-														<div className="flex items-center gap-2 text-xs text-gray-500">
-															<Calendar className="w-3 h-3" />
-															Submitted{" "}
-															{mounted
-																? new Date(
-																		response.submittedAt
-																  ).toLocaleDateString()
-																: response.submittedAt}{" "}
-															at{" "}
-															{mounted
-																? new Date(
-																		response.submittedAt
-																  ).toLocaleTimeString()
-																: "Loading..."}
-														</div>
-													</div>
-												</div>
-											</div>
-										))
-									) : (
-										<div className="text-center py-8">
-											<BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-											<p className="text-gray-500">
-												{searchTerm ||
-												filterService !== "all" ||
-												filterDate !== "all"
-													? "No results match your current filters"
-													: "No evaluation responses yet"}
-											</p>
-											{(searchTerm ||
-												filterService !== "all" ||
-												filterDate !== "all") && (
-												<Button
-													onClick={() => {
-														setSearchTerm("");
-														setFilterService("all");
-														setFilterDate("all");
-													}}
-													variant="outline"
-													className="mt-4"
-												>
-													Clear Filters
-												</Button>
-											)}
-										</div>
-									)}
-								</div>
-							</CardContent>
-						</Card>
 					</TabsContent>
 				</Tabs>
 

@@ -158,6 +158,7 @@ export default function StaffDashboard() {
 		deskQueueData[0] || null
 	);
 	const [queueList, setQueueList] = useState(deskQueueData.slice(1));
+	const [archivedCustomers, setArchivedCustomers] = useState<any[]>([]);
 	const [evaluationScanned, setEvaluationScanned] = useState(false);
 	const [isMounted, setIsMounted] = useState(false);
 	const [qrCodeScanned, setQrCodeScanned] = useState(false);
@@ -311,6 +312,18 @@ export default function StaffDashboard() {
 	};
 
 	const handleNext = () => {
+		// Archive current customer if exists
+		if (currentQueue) {
+			const archivedCustomer = {
+				...currentQueue,
+				archivedAt: mounted ? new Date().toLocaleString() : "Loading...",
+				archivedBy: currentStaff.name,
+				archiveReason: "Service completed - moved to next customer",
+				status: "Archived",
+			};
+			setArchivedCustomers(prev => [archivedCustomer, ...prev]);
+		}
+
 		if (queueList.length > 0) {
 			const nextCustomer = queueList[0];
 			setCurrentQueue(nextCustomer);
@@ -321,6 +334,8 @@ export default function StaffDashboard() {
 				nextCustomer.customerName,
 				nextCustomer.ticketNumber
 			);
+		} else {
+			setCurrentQueue(null);
 		}
 	};
 
@@ -332,6 +347,18 @@ export default function StaffDashboard() {
 	};
 
 	const handleSkip = () => {
+		// Archive current customer if exists
+		if (currentQueue) {
+			const archivedCustomer = {
+				...currentQueue,
+				archivedAt: mounted ? new Date().toLocaleString() : "Loading...",
+				archivedBy: currentStaff.name,
+				archiveReason: "Skipped by staff",
+				status: "Archived",
+			};
+			setArchivedCustomers(prev => [archivedCustomer, ...prev]);
+		}
+
 		// Skip current customer
 		if (queueList.length > 0) {
 			const nextCustomer = queueList[0];
@@ -343,40 +370,31 @@ export default function StaffDashboard() {
 				nextCustomer.customerName,
 				nextCustomer.ticketNumber
 			);
+		} else {
+			setCurrentQueue(null);
 		}
 	};
 
-	const handleMoveToArchives = (customer: any, reason: string) => {
-		// Create archived customer record
-		const archivedCustomer = {
-			...customer,
-			deletedAt: mounted ? new Date().toLocaleString() : "Loading...",
-			deletedBy: currentStaff.name,
-			deletionReason: reason,
-			status: "Archived",
+	const handleRestoreCustomer = (archivedCustomer: any) => {
+		// Remove from archived customers
+		setArchivedCustomers(prev => 
+			prev.filter(c => c.id !== archivedCustomer.id)
+		);
+
+		// Add back to queue (insert at the beginning of queue list)
+		const restoredCustomer = {
+			...archivedCustomer,
+			status: "Waiting",
+			archivedAt: undefined,
+			archivedBy: undefined,
+			archiveReason: undefined,
 		};
+		
+		setQueueList(prev => [restoredCustomer, ...prev]);
 
-		// In a real app, this would be sent to an API
-		console.log("Moving customer to archives:", archivedCustomer);
-
-		// Remove customer from current queue
-		if (currentQueue && currentQueue.id === customer.id) {
-			// If it's the current customer, move to next
-			if (queueList.length > 0) {
-				const nextCustomer = queueList[0];
-				setCurrentQueue(nextCustomer);
-				setQueueList(queueList.slice(1));
-			} else {
-				setCurrentQueue(null as any);
-			}
-		} else {
-			// Remove from queue list
-			setQueueList(queueList.filter((c) => c.id !== customer.id));
-		}
-
-		// Show success message (in real app, this would be a toast notification)
+		// Show success message
 		alert(
-			`Customer ${customer.customerName} (${customer.ticketNumber}) has been moved to archives.`
+			`Customer ${archivedCustomer.customerName} (${archivedCustomer.ticketNumber}) has been restored to the queue.`
 		);
 	};
 
@@ -783,7 +801,7 @@ export default function StaffDashboard() {
 											Queue Management Controls
 										</h4>
 
-										<div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-4">
+										<div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-4">
 											<div className="relative group">
 												<Button
 													onClick={handleNext}
@@ -837,32 +855,6 @@ export default function StaffDashboard() {
 												<div className="absolute -top-2 -right-2 w-6 h-6 bg-red-400 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
 													<span className="text-white text-xs font-bold">
 														⏭
-													</span>
-												</div>
-											</div>
-
-											<div className="relative group">
-												<Button
-													onClick={() => {
-														const reason = prompt(
-															"Please provide a reason for archiving this customer:"
-														);
-														if (reason && currentQueue) {
-															handleMoveToArchives(currentQueue, reason);
-														}
-													}}
-													className="w-full bg-gradient-to-br from-orange-500 to-orange-600 cursor-pointer hover:from-orange-600 hover:to-orange-700 text-white h-32 text-lg font-bold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 border-0 rounded-2xl"
-												>
-													<div className="flex flex-col items-center gap-2">
-														<div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-															<Archive className="w-7 h-7" />
-														</div>
-														<span>Move to Archives</span>
-													</div>
-												</Button>
-												<div className="absolute -top-2 -right-2 w-6 h-6 bg-orange-400 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-													<span className="text-white text-xs font-bold">
-														📁
 													</span>
 												</div>
 											</div>
@@ -1030,22 +1022,6 @@ export default function StaffDashboard() {
 											<p className="text-xs text-muted-foreground mt-1">
 												{customer.waitTime}
 											</p>
-											<Button
-												onClick={() => {
-													const reason = prompt(
-														"Please provide a reason for archiving this customer:"
-													);
-													if (reason) {
-														handleMoveToArchives(customer, reason);
-													}
-												}}
-												variant="outline"
-												size="sm"
-												className="mt-2 text-orange-600 hover:text-orange-700 border-orange-300 hover:border-orange-400"
-											>
-												<Archive className="w-3 h-3 mr-1" />
-												Archive
-											</Button>
 										</div>
 									</div>
 								))
@@ -1227,6 +1203,94 @@ export default function StaffDashboard() {
 									View All Feedback
 								</Button>
 							</div>
+						</div>
+					</CardContent>
+				</Card>
+
+				{/* Archived Customers */}
+				<Card>
+					<CardHeader>
+						<CardTitle className="flex items-center gap-2">
+							<Archive className="w-5 h-5 text-orange-600" />
+							Archived Customers
+						</CardTitle>
+						<CardDescription>
+							Customers who have been processed or skipped - can be restored to queue
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<div className="space-y-3 max-h-96 overflow-y-auto">
+							{archivedCustomers.length > 0 ? (
+								archivedCustomers.map((customer) => (
+									<div
+										key={customer.id}
+										className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 border rounded-lg bg-orange-50 border-orange-200"
+									>
+										<div className="flex items-center gap-3 min-w-0 flex-1">
+											<div className="w-12 h-12 rounded-full bg-orange-500 text-white flex items-center justify-center flex-shrink-0">
+												<span className="font-bold text-base leading-none">
+													{customer.ticketNumber}
+												</span>
+											</div>
+											<div className="min-w-0 flex-1">
+												<p className="font-medium truncate">
+													{customer.customerName}
+												</p>
+												<p className="text-sm text-muted-foreground truncate">
+													{customer.service}
+												</p>
+												<div className="flex items-center gap-2 mt-1">
+													<Badge className="bg-orange-100 text-orange-800">
+														Archived
+													</Badge>
+													<Badge
+														className={getCustomerTypeBadge(
+															customer.customerType
+														)}
+													>
+														{customer.customerType}
+													</Badge>
+													{customer.priority === "Priority" &&
+														customer.priorityLaneImage && (
+															<div className="flex items-center gap-2">
+																<ImageIcon className="w-3 h-3 text-amber-600" />
+																<span className="text-xs text-amber-600 font-medium">
+																	Has Priority Image
+																</span>
+															</div>
+														)}
+												</div>
+												<div className="flex items-center gap-2 mt-1">
+													<span className="text-xs text-orange-600 font-medium">
+														{customer.archiveReason}
+													</span>
+												</div>
+												<div className="flex items-center gap-2 mt-1">
+													<span className="text-xs text-muted-foreground">
+														Archived by: {customer.archivedBy} at {customer.archivedAt}
+													</span>
+												</div>
+											</div>
+										</div>
+										<div className="text-left sm:text-right flex-shrink-0">
+											<Button
+												onClick={() => handleRestoreCustomer(customer)}
+												variant="outline"
+												size="sm"
+												className="text-green-600 hover:text-green-700 border-green-300 hover:border-green-400"
+											>
+												<Play className="w-3 h-3 mr-1" />
+												Restore to Queue
+											</Button>
+										</div>
+									</div>
+								))
+							) : (
+								<div className="text-center py-8">
+									<Archive className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+									<p className="text-muted-foreground">No archived customers</p>
+								</div>
+							)}
 						</div>
 					</CardContent>
 				</Card>
