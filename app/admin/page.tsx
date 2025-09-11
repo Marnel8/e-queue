@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
 	Card,
 	CardContent,
@@ -22,6 +24,58 @@ import {
 } from "lucide-react";
 
 export default function AdminDashboard() {
+	const [isLoading, setIsLoading] = useState(true);
+	const [metrics, setMetrics] = useState<{
+		totalUsers: number;
+		activeOffices: number;
+		avgWaitMinutes: number | null;
+		queueEfficiencyPercent: number | null;
+		systemStatus: {
+			databaseHealthy: boolean;
+			queueActive: boolean | null;
+			notificationsStatus: "active" | "warning" | "inactive" | "unknown";
+			authenticationSecure: boolean;
+		};
+		recentActivity: {
+			id: string;
+			title: string;
+			description: string;
+			level: "info" | "warning" | "error" | "success";
+			timestamp: string;
+		}[];
+		officePerformance: {
+			officeId: string;
+			officeName: string;
+			efficiencyPercent: number | null;
+		}[];
+	} | null>(null);
+
+	useEffect(() => {
+		let isMounted = true;
+		(async () => {
+			try {
+				const res = await fetch("/api/admin/metrics", { cache: "no-store" });
+				const text = await res.text();
+				let json: any = null;
+				try {
+					json = text ? JSON.parse(text) : null;
+				} catch (e) {
+					console.error("Non-JSON response from /api/admin/metrics:", text);
+				}
+				if (isMounted && json?.success) {
+					setMetrics(json.data);
+				}
+			} catch (e) {
+				console.error(e);
+			} finally {
+				if (isMounted) setIsLoading(false);
+			}
+		})();
+		return () => {
+			isMounted = false;
+		};
+	}, []);
+
 	return (
 		<div className="space-y-6">
 			{/* Page Header */}
@@ -42,7 +96,7 @@ export default function AdminDashboard() {
 						</div>
 					</CardHeader>
 					<CardContent className="pt-0">
-						<div className="text-3xl font-bold text-[#071952] mb-1">2,847</div>
+						<div className="text-3xl font-bold text-[#071952] mb-1">{isLoading ? "…" : (metrics?.totalUsers ?? 0).toLocaleString()}</div>
 						<p className="text-sm text-gray-500 flex items-center gap-1">
 							<span className="text-emerald-600 font-medium">+12%</span> from
 							last month
@@ -60,7 +114,7 @@ export default function AdminDashboard() {
 						</div>
 					</CardHeader>
 					<CardContent className="pt-0">
-						<div className="text-3xl font-bold text-[#071952] mb-1">24</div>
+						<div className="text-3xl font-bold text-[#071952] mb-1">{isLoading ? "…" : (metrics?.activeOffices ?? 0).toLocaleString()}</div>
 						<p className="text-sm text-gray-500 flex items-center gap-1">
 							<span className="text-emerald-600 font-medium">+2</span> new this
 							month
@@ -78,7 +132,7 @@ export default function AdminDashboard() {
 						</div>
 					</CardHeader>
 					<CardContent className="pt-0">
-						<div className="text-3xl font-bold text-[#071952] mb-1">8.5m</div>
+						<div className="text-3xl font-bold text-[#071952] mb-1">{isLoading ? "…" : (metrics?.avgWaitMinutes != null ? `${metrics.avgWaitMinutes.toFixed(1)}m` : "—")}</div>
 						<p className="text-sm text-gray-500 flex items-center gap-1">
 							<span className="text-emerald-600 font-medium">-2.3m</span> from
 							last week
@@ -96,7 +150,7 @@ export default function AdminDashboard() {
 						</div>
 					</CardHeader>
 					<CardContent className="pt-0">
-						<div className="text-3xl font-bold text-[#071952] mb-1">94.2%</div>
+						<div className="text-3xl font-bold text-[#071952] mb-1">{isLoading ? "…" : (metrics?.queueEfficiencyPercent != null ? `${metrics.queueEfficiencyPercent.toFixed(1)}%` : "—")}</div>
 						<p className="text-sm text-gray-500 flex items-center gap-1">
 							<span className="text-emerald-600 font-medium">+1.8%</span>{" "}
 							improvement
@@ -127,7 +181,7 @@ export default function AdminDashboard() {
 								</span>
 							</div>
 							<Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-emerald-200">
-								Healthy
+								{metrics?.systemStatus?.databaseHealthy === false ? "Issue" : "Healthy"}
 							</Badge>
 						</div>
 
@@ -141,7 +195,7 @@ export default function AdminDashboard() {
 								</span>
 							</div>
 							<Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-emerald-200">
-								Active
+								{metrics?.systemStatus?.queueActive == null ? "Unknown" : metrics?.systemStatus?.queueActive ? "Active" : "Inactive"}
 							</Badge>
 						</div>
 
@@ -155,7 +209,7 @@ export default function AdminDashboard() {
 								</span>
 							</div>
 							<Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200">
-								Warning
+								{metrics?.systemStatus?.notificationsStatus === "active" ? "Active" : metrics?.systemStatus?.notificationsStatus === "warning" ? "Warning" : "Unknown"}
 							</Badge>
 						</div>
 
@@ -169,7 +223,7 @@ export default function AdminDashboard() {
 								</span>
 							</div>
 							<Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-emerald-200">
-								Secure
+								{metrics?.systemStatus?.authenticationSecure === false ? "Issue" : "Secure"}
 							</Badge>
 						</div>
 					</CardContent>
@@ -187,53 +241,18 @@ export default function AdminDashboard() {
 					</CardHeader>
 					<CardContent>
 						<div className="space-y-4">
-							<div className="flex items-start gap-4 p-3 bg-gray-50 rounded-lg">
-								<div className="w-2 h-2 bg-emerald-500 rounded-full mt-2 flex-shrink-0"></div>
-								<div className="flex-1 min-w-0">
-									<p className="text-sm font-medium text-gray-900">
-										New office registered
-									</p>
-									<p className="text-xs text-gray-500 mt-1">
-										Student Affairs Office - 2 minutes ago
-									</p>
+							{(metrics?.recentActivity ?? []).map((item) => (
+								<div key={item.id} className="flex items-start gap-4 p-3 bg-gray-50 rounded-lg">
+									<div className={`w-2 h-2 ${item.level === "error" ? "bg-red-500" : item.level === "warning" ? "bg-amber-500" : item.level === "success" ? "bg-emerald-500" : "bg-[#088395]"} rounded-full mt-2 flex-shrink-0`}></div>
+									<div className="flex-1 min-w-0">
+										<p className="text-sm font-medium text-gray-900">{item.title}</p>
+										<p className="text-xs text-gray-500 mt-1">{item.description} - {new Date(item.timestamp).toLocaleString()}</p>
+									</div>
 								</div>
-							</div>
-
-							<div className="flex items-start gap-4 p-3 bg-gray-50 rounded-lg">
-								<div className="w-2 h-2 bg-[#088395] rounded-full mt-2 flex-shrink-0"></div>
-								<div className="flex-1 min-w-0">
-									<p className="text-sm font-medium text-gray-900">
-										Staff member added
-									</p>
-									<p className="text-xs text-gray-500 mt-1">
-										Maria Santos to Registrar Office - 15 minutes ago
-									</p>
-								</div>
-							</div>
-
-							<div className="flex items-start gap-4 p-3 bg-gray-50 rounded-lg">
-								<div className="w-2 h-2 bg-amber-500 rounded-full mt-2 flex-shrink-0"></div>
-								<div className="flex-1 min-w-0">
-									<p className="text-sm font-medium text-gray-900">
-										System maintenance scheduled
-									</p>
-									<p className="text-xs text-gray-500 mt-1">
-										Database optimization - 1 hour ago
-									</p>
-								</div>
-							</div>
-
-							<div className="flex items-start gap-4 p-3 bg-gray-50 rounded-lg">
-								<div className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0"></div>
-								<div className="flex-1 min-w-0">
-									<p className="text-sm font-medium text-gray-900">
-										User account suspended
-									</p>
-									<p className="text-xs text-gray-500 mt-1">
-										Violation of terms - 2 hours ago
-									</p>
-								</div>
-							</div>
+							))}
+							{(metrics?.recentActivity ?? []).length === 0 && (
+								<div className="text-sm text-gray-500">No recent activity.</div>
+							)}
 						</div>
 					</CardContent>
 				</Card>
@@ -251,65 +270,22 @@ export default function AdminDashboard() {
 				</CardHeader>
 				<CardContent>
 					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-						<div className="space-y-3 p-4 bg-gray-50 rounded-lg">
-							<div className="flex justify-between items-center">
-								<span className="text-sm font-medium text-gray-700">
-									Registrar Office
-								</span>
-								<span className="text-sm font-bold text-emerald-600">96%</span>
+						{(metrics?.officePerformance ?? []).map((op) => (
+							<div key={op.officeId} className="space-y-3 p-4 bg-gray-50 rounded-lg">
+								<div className="flex justify-between items-center">
+									<span className="text-sm font-medium text-gray-700">
+										{op.officeName}
+									</span>
+									<span className={`text-sm font-bold ${op.efficiencyPercent == null ? "text-gray-500" : op.efficiencyPercent >= 90 ? "text-emerald-600" : op.efficiencyPercent >= 80 ? "text-amber-600" : "text-red-600"}`}>
+										{op.efficiencyPercent == null ? "—" : `${op.efficiencyPercent.toFixed(0)}%`}
+									</span>
+								</div>
+								<Progress value={op.efficiencyPercent ?? 0} className="h-2" />
 							</div>
-							<Progress value={96} className="h-2" />
-						</div>
-
-						<div className="space-y-3 p-4 bg-gray-50 rounded-lg">
-							<div className="flex justify-between items-center">
-								<span className="text-sm font-medium text-gray-700">
-									Cashier Office
-								</span>
-								<span className="text-sm font-bold text-emerald-600">94%</span>
-							</div>
-							<Progress value={94} className="h-2" />
-						</div>
-
-						<div className="space-y-3 p-4 bg-gray-50 rounded-lg">
-							<div className="flex justify-between items-center">
-								<span className="text-sm font-medium text-gray-700">
-									Student Affairs
-								</span>
-								<span className="text-sm font-bold text-amber-600">87%</span>
-							</div>
-							<Progress value={87} className="h-2" />
-						</div>
-
-						<div className="space-y-3 p-4 bg-gray-50 rounded-lg">
-							<div className="flex justify-between items-center">
-								<span className="text-sm font-medium text-gray-700">
-									Library
-								</span>
-								<span className="text-sm font-bold text-emerald-600">92%</span>
-							</div>
-							<Progress value={92} className="h-2" />
-						</div>
-
-						<div className="space-y-3 p-4 bg-gray-50 rounded-lg">
-							<div className="flex justify-between items-center">
-								<span className="text-sm font-medium text-gray-700">
-									IT Services
-								</span>
-								<span className="text-sm font-bold text-red-600">78%</span>
-							</div>
-							<Progress value={78} className="h-2" />
-						</div>
-
-						<div className="space-y-3 p-4 bg-gray-50 rounded-lg">
-							<div className="flex justify-between items-center">
-								<span className="text-sm font-medium text-gray-700">
-									Guidance Office
-								</span>
-								<span className="text-sm font-bold text-emerald-600">91%</span>
-							</div>
-							<Progress value={91} className="h-2" />
-						</div>
+						))}
+						{(metrics?.officePerformance ?? []).length === 0 && (
+							<div className="text-sm text-gray-500">No office performance data.</div>
+						)}
 					</div>
 				</CardContent>
 			</Card>
@@ -326,53 +302,61 @@ export default function AdminDashboard() {
 				</CardHeader>
 				<CardContent>
 					<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-						<Button
-							variant="outline"
-							className="h-24 flex flex-col gap-3 bg-white hover:bg-[#071952]/5 hover:border-[#071952]/20 transition-all duration-200 border-gray-200"
-						>
-							<div className="p-2 bg-[#071952]/10 rounded-lg">
-								<Users className="w-6 h-6 text-[#071952]" />
-							</div>
-							<span className="text-sm font-medium text-gray-700">
-								Add User
-							</span>
-						</Button>
+						<Link href="/admin/users" className="h-24">
+							<Button
+								variant="outline"
+								className="h-full w-full flex flex-col gap-3 bg-white hover:bg-[#071952]/5 hover:border-[#071952]/20 transition-all duration-200 border-gray-200"
+							>
+								<div className="p-2 bg-[#071952]/10 rounded-lg">
+									<Users className="w-6 h-6 text-[#071952]" />
+								</div>
+								<span className="text-sm font-medium text-gray-700">
+									Add User
+								</span>
+							</Button>
+						</Link>
 
-						<Button
-							variant="outline"
-							className="h-24 flex flex-col gap-3 bg-white hover:bg-[#088395]/5 hover:border-[#088395]/20 transition-all duration-200 border-gray-200"
-						>
-							<div className="p-2 bg-[#088395]/10 rounded-lg">
-								<Building2 className="w-6 h-6 text-[#088395]" />
-							</div>
-							<span className="text-sm font-medium text-gray-700">
-								New Office
-							</span>
-						</Button>
+						<Link href="/admin/offices" className="h-24">
+							<Button
+								variant="outline"
+								className="h-full w-full flex flex-col gap-3 bg-white hover:bg-[#088395]/5 hover:border-[#088395]/20 transition-all duration-200 border-gray-200"
+							>
+								<div className="p-2 bg-[#088395]/10 rounded-lg">
+									<Building2 className="w-6 h-6 text-[#088395]" />
+								</div>
+								<span className="text-sm font-medium text-gray-700">
+									New Office
+								</span>
+							</Button>
+						</Link>
 
-						<Button
-							variant="outline"
-							className="h-24 flex flex-col gap-3 bg-white hover:bg-[#37B7C3]/5 hover:border-[#37B7C3]/20 transition-all duration-200 border-gray-200"
-						>
-							<div className="p-2 bg-[#37B7C3]/10 rounded-lg">
-								<BarChart3 className="w-6 h-6 text-[#37B7C3]" />
-							</div>
-							<span className="text-sm font-medium text-gray-700">
-								View Reports
-							</span>
-						</Button>
+						<Link href="/admin/reports" className="h-24">
+							<Button
+								variant="outline"
+								className="h-full w-full flex flex-col gap-3 bg-white hover:bg-[#37B7C3]/5 hover:border-[#37B7C3]/20 transition-all duration-200 border-gray-200"
+							>
+								<div className="p-2 bg-[#37B7C3]/10 rounded-lg">
+									<BarChart3 className="w-6 h-6 text-[#37B7C3]" />
+								</div>
+								<span className="text-sm font-medium text-gray-700">
+									View Reports
+								</span>
+							</Button>
+						</Link>
 
-						<Button
-							variant="outline"
-							className="h-24 flex flex-col gap-3 bg-white hover:bg-gray-500/5 hover:border-gray-500/20 transition-all duration-200 border-gray-200"
-						>
-							<div className="p-2 bg-gray-500/10 rounded-lg">
-								<Settings className="w-6 h-6 text-gray-600" />
-							</div>
-							<span className="text-sm font-medium text-gray-700">
-								System Settings
-							</span>
-						</Button>
+						<Link href="/admin/settings" className="h-24">
+							<Button
+								variant="outline"
+								className="h-full w-full flex flex-col gap-3 bg-white hover:bg-gray-500/5 hover:border-gray-500/20 transition-all duration-200 border-gray-200"
+							>
+								<div className="p-2 bg-gray-500/10 rounded-lg">
+									<Settings className="w-6 h-6 text-gray-600" />
+								</div>
+								<span className="text-sm font-medium text-gray-700">
+									System Settings
+								</span>
+							</Button>
+						</Link>
 					</div>
 				</CardContent>
 			</Card>

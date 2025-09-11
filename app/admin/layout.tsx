@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Users, Building2, BarChart3, Settings, Search, Bell, Menu, X, LayoutDashboard, LogOut } from "lucide-react"
+import { Users, Building2, BarChart3, Settings, Search, Bell, Menu, X, LayoutDashboard, LogOut, Shield } from "lucide-react"
 import { Suspense } from "react"
 import { AuthProvider, useAuth } from "@/contexts/auth-context"
 import { useRouter } from "next/navigation"
@@ -18,6 +18,7 @@ const navigation = [
   { name: "Office Management", href: "/admin/offices", icon: Building2 },
   { name: "Reports & Analytics", href: "/admin/reports", icon: BarChart3 },
   { name: "System Settings", href: "/admin/settings", icon: Settings },
+  { name: "My Profile", href: "/admin/profile", icon: Shield },
 ]
 
 function AdminContent({ children }: { children: React.ReactNode }) {

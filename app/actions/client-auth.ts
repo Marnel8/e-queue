@@ -1,6 +1,6 @@
 "use client";
 
-import { signInWithEmailAndPassword, User } from "firebase/auth";
+import { signInWithEmailAndPassword, User, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/firebase/firebase";
 
@@ -82,5 +82,33 @@ export async function signInClient(data: SignInData): Promise<AuthResult> {
       success: false,
       message: errorMessage,
     };
+  }
+}
+
+export async function changePasswordClient(currentPassword: string, newPassword: string): Promise<{ success: boolean; message: string }> {
+  try {
+    const currentUser = auth.currentUser;
+    if (!currentUser || !currentUser.email) {
+      return { success: false, message: "No authenticated user." };
+    }
+
+    const credential = EmailAuthProvider.credential(currentUser.email, currentPassword);
+    await reauthenticateWithCredential(currentUser, credential);
+    await updatePassword(currentUser, newPassword);
+
+    return { success: true, message: "Password updated successfully." };
+  } catch (error: any) {
+    console.error("Change password error:", error);
+    let errorMessage = "Failed to update password.";
+    if (error.code === "auth/wrong-password") {
+      errorMessage = "Current password is incorrect.";
+    } else if (error.code === "auth/weak-password") {
+      errorMessage = "New password is too weak (min 6 characters).";
+    } else if (error.code === "auth/too-many-requests") {
+      errorMessage = "Too many attempts. Try again later.";
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    return { success: false, message: errorMessage };
   }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
 	Card,
 	CardContent,
@@ -30,57 +30,56 @@ import {
 export default function ReportsPage() {
 	const [timeRange, setTimeRange] = useState("7d");
 	const [reportType, setReportType] = useState("overview");
+	const [loading, setLoading] = useState(true);
+	const [reports, setReports] = useState<{
+		systemMetrics: {
+			totalTickets: number | null;
+			avgWaitTime: number | null;
+			customerSatisfaction: number | null;
+			systemUptime: number | null;
+			peakHours: string | null;
+			busiestOffice: string | null;
+			violations: number | null;
+		};
+		officePerformance: Array<{
+			office: string;
+			tickets: number | null;
+			avgWait: number | null;
+			satisfaction: number | null;
+			efficiency: number | null;
+		}>;
+		weeklyTrends: Array<{ day: string; tickets: number; avgWait: number | null }>;
+	} | null>(null);
 
-	const systemMetrics = {
-		totalTickets: 2847,
-		avgWaitTime: 12.5,
-		customerSatisfaction: 4.2,
-		systemUptime: 99.8,
-		peakHours: "10:00 AM - 12:00 PM",
-		busiesOffice: "Registrar Office",
-		violations: 12,
-	};
-
-	const officePerformance = [
-		{
-			office: "Registrar Office",
-			tickets: 1245,
-			avgWait: 15.2,
-			satisfaction: 4.1,
-			efficiency: 87,
-		},
-		{
-			office: "Cashier Office",
-			tickets: 892,
-			avgWait: 8.5,
-			satisfaction: 4.4,
-			efficiency: 92,
-		},
-		{
-			office: "Student Affairs",
-			tickets: 456,
-			avgWait: 12.1,
-			satisfaction: 4.0,
-			efficiency: 85,
-		},
-		{
-			office: "Library Services",
-			tickets: 254,
-			avgWait: 6.2,
-			satisfaction: 4.6,
-			efficiency: 95,
-		},
-	];
-
-	const weeklyTrends = [
-		{ day: "Mon", tickets: 425, avgWait: 14.2 },
-		{ day: "Tue", tickets: 380, avgWait: 12.8 },
-		{ day: "Wed", tickets: 445, avgWait: 15.1 },
-		{ day: "Thu", tickets: 398, avgWait: 13.5 },
-		{ day: "Fri", tickets: 512, avgWait: 16.8 },
-		{ day: "Sat", tickets: 287, avgWait: 9.2 },
-		{ day: "Sun", tickets: 156, avgWait: 7.5 },
-	];
+	useEffect(() => {
+		let isMounted = true;
+		(async () => {
+			setLoading(true);
+			try {
+				const res = await fetch("/api/admin/metrics", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ range: timeRange }),
+					cache: "no-store",
+				});
+				const text = await res.text();
+				let json: any = null;
+				try {
+					json = text ? JSON.parse(text) : null;
+				} catch (e) {
+					console.error("Non-JSON response from /api/admin/metrics (reports):", text);
+				}
+				if (isMounted && json?.success) setReports(json.data);
+			} catch (e) {
+				console.error(e);
+			} finally {
+				if (isMounted) setLoading(false);
+			}
+		})();
+		return () => {
+			isMounted = false;
+		};
+	}, [timeRange]);
 
 	return (
 		<div className="space-y-8">
@@ -138,7 +137,7 @@ export default function ReportsPage() {
 						</CardHeader>
 						<CardContent>
 							<div className="text-2xl font-bold">
-								{systemMetrics.totalTickets.toLocaleString()}
+								{reports?.systemMetrics?.totalTickets?.toLocaleString()}
 							</div>
 							<div className="flex items-center text-xs text-green-600">
 								<TrendingUp className="w-3 h-3 mr-1" />
@@ -156,7 +155,7 @@ export default function ReportsPage() {
 						</CardHeader>
 						<CardContent>
 							<div className="text-2xl font-bold">
-								{systemMetrics.avgWaitTime} min
+								{reports?.systemMetrics?.avgWaitTime} min
 							</div>
 							<div className="flex items-center text-xs text-green-600">
 								<TrendingDown className="w-3 h-3 mr-1" />
@@ -174,7 +173,7 @@ export default function ReportsPage() {
 						</CardHeader>
 						<CardContent>
 							<div className="text-2xl font-bold">
-								{systemMetrics.customerSatisfaction}/5.0
+								{reports?.systemMetrics?.customerSatisfaction}/5.0
 							</div>
 							<div className="flex items-center text-xs text-green-600">
 								<TrendingUp className="w-3 h-3 mr-1" />
@@ -211,11 +210,11 @@ export default function ReportsPage() {
 									</tr>
 								</thead>
 								<tbody>
-									{officePerformance.map((office, index) => (
+									{reports?.officePerformance?.map((office, index) => (
 										<tr key={index} className="border-b hover:bg-gray-50">
 											<td className="py-3 px-4 font-medium">{office.office}</td>
 											<td className="py-3 px-4">
-												{office.tickets.toLocaleString()}
+												{office.tickets?.toLocaleString()}
 											</td>
 											<td className="py-3 px-4">{office.avgWait} min</td>
 											<td className="py-3 px-4">
@@ -262,7 +261,7 @@ export default function ReportsPage() {
 					</CardHeader>
 					<CardContent>
 						<div className="space-y-4">
-							{weeklyTrends.map((day, index) => (
+							{reports?.weeklyTrends?.map((day, index) => (
 								<div
 									key={index}
 									className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
@@ -298,19 +297,19 @@ export default function ReportsPage() {
 								<div className="flex justify-between items-center">
 									<span className="text-sm font-medium">System Uptime</span>
 									<Badge className="bg-green-100 text-green-800">
-										{systemMetrics.systemUptime}%
+										{reports?.systemMetrics?.systemUptime}%
 									</Badge>
 								</div>
 								<div className="flex justify-between items-center">
 									<span className="text-sm font-medium">Peak Hours</span>
 									<span className="text-sm text-gray-600">
-										{systemMetrics.peakHours}
+										{reports?.systemMetrics?.peakHours}
 									</span>
 								</div>
 								<div className="flex justify-between items-center">
 									<span className="text-sm font-medium">Busiest Office</span>
 									<span className="text-sm text-gray-600">
-										{systemMetrics.busiesOffice}
+										{reports?.systemMetrics?.busiestOffice}
 									</span>
 								</div>
 							</div>
@@ -330,7 +329,7 @@ export default function ReportsPage() {
 								<div className="flex items-center space-x-2 text-red-600">
 									<AlertCircle className="w-4 h-4" />
 									<span className="text-sm">
-										{systemMetrics.violations} flagged user violations
+										{reports?.systemMetrics?.violations} flagged user violations
 									</span>
 								</div>
 							</div>

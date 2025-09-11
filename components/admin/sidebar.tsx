@@ -23,6 +23,7 @@ const navigation = [
 	{ name: "User Management", href: "/admin/users", icon: Users },
 	{ name: "Office Management", href: "/admin/offices", icon: Building2 },
 	{ name: "Reports & Analytics", href: "/admin/reports", icon: BarChart3 },
+							
 	{ name: "System Settings", href: "/admin/settings", icon: Settings },
 	{ name: "Violations", href: "/admin/violations", icon: AlertTriangle },
 ];

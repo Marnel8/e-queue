@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Eye, EyeOff, ArrowLeft, AlertTriangle, Shield, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -27,7 +26,6 @@ import { useToast } from "@/hooks/use-toast";
 const loginSchema = z.object({
 	email: z.string().email("Please enter a valid email address"),
 	password: z.string().min(6, "Password must be at least 6 characters"),
-	rememberMe: z.boolean().optional(),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -68,18 +66,13 @@ export default function LoginPage() {
 		register,
 		handleSubmit,
 		formState: { errors },
-		setValue,
-		watch,
 	} = useForm<LoginFormData>({
 		resolver: zodResolver(loginSchema),
 		defaultValues: {
 			email: "",
 			password: "",
-			rememberMe: false,
 		},
 	});
-
-	const rememberMe = watch("rememberMe");
 
 	// Check for existing lockout on component mount
 	useEffect(() => {
@@ -306,10 +299,10 @@ export default function LoginPage() {
 							</>
 						) : (
 							<div className="space-y-4">
-								<div className="h-4 w-full bg-muted animate-pulse" />
-								<div className="h-4 w-full bg-muted animate-pulse" />
-								<div className="h-4 w-full bg-muted animate-pulse" />
-								<div className="h-9 w-32 bg-muted animate-pulse mx-auto" />
+								<div className="h-9 w-full rounded-md bg-muted animate-pulse" />
+								<div className="h-9 w-full rounded-md bg-muted animate-pulse" />
+								<div className="h-9 w-full rounded-md bg-muted animate-pulse" />
+								<div className="h-9 w-full rounded-md bg-muted animate-pulse" />
 							</div>
 						)}
 					</CardContent>
@@ -366,12 +359,13 @@ export default function LoginPage() {
 								<div className="space-y-2">
 									<Label htmlFor="email">Email Address</Label>
 									<Input
-										id="email"
-										type="email"
-										{...register("email")}
-										disabled={isLocked || isLoading}
-										className={errors.email ? "border-red-500" : ""}
-									/>
+ 										id="email"
+ 										type="email"
+ 										placeholder="Enter your email"
+ 										{...register("email")}
+ 										disabled={isLocked || isLoading}
+ 										className={`bg-white dark:bg-neutral-900 border ${errors.email ? "border-red-500" : "border-gray-300 dark:border-gray-700"} text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary`}
+ 									/>
 									{errors.email && (
 										<p className="text-sm text-red-500">{errors.email.message}</p>
 									)}
@@ -384,9 +378,10 @@ export default function LoginPage() {
 										<Input
 											id="password"
 											type={mounted && showPassword ? "text" : "password"}
+											placeholder="Enter your password"
 											{...register("password")}
 											disabled={isLocked || isLoading}
-											className={errors.password ? "border-red-500" : ""}
+											className={`bg-white dark:bg-neutral-900 border ${errors.password ? "border-red-500" : "border-gray-300 dark:border-gray-700"} text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary`}
 										/>
 										{mounted && (
 											<Button
@@ -411,25 +406,7 @@ export default function LoginPage() {
 									)}
 								</div>
 
-								{/* Remember Me */}
-								<div className="flex items-center space-x-2">
-									{mounted ? (
-										<Checkbox
-											key="remember-checkbox"
-											id="remember"
-											checked={rememberMe}
-											onCheckedChange={(checked) =>
-												setValue("rememberMe", checked as boolean)
-											}
-											disabled={isLocked || isLoading}
-										/>
-									) : (
-										<div className="h-4 w-4 rounded border bg-muted" />
-									)}
-									<Label htmlFor="remember" className="text-sm font-normal">
-										Remember me
-									</Label>
-								</div>
+								{/* Remember Me removed */}
 
 								{/* Login Attempts Warning */}
 								{loginAttempts > 0 && (
@@ -480,7 +457,6 @@ export default function LoginPage() {
 								<div className="h-9 w-full rounded-md bg-muted animate-pulse" />
 								<div className="h-9 w-full rounded-md bg-muted animate-pulse" />
 								<div className="h-9 w-full rounded-md bg-muted animate-pulse" />
-								<div className="h-4 w-4 rounded border bg-muted animate-pulse" />
 								<div className="h-9 w-full rounded-md bg-muted animate-pulse" />
 							</div>
 						</CardContent>
@@ -503,12 +479,12 @@ export default function LoginPage() {
 									Sign up
 								</Link>
 							</div>
-							<div className="text-sm text-muted-foreground">
+							{/* <div className="text-sm text-muted-foreground">
 								Need admin access?{" "}
 								<Link href="/admin-signup" className="text-primary hover:underline font-medium">
 									Admin Sign Up
 								</Link>
-							</div>
+							</div> */}
 						</div>
 
 						{/* Back to Home */}

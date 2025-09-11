@@ -1,6 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useToast } from "@/hooks/use-toast";
 import {
 	Card,
 	CardContent,
@@ -22,33 +26,105 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Save, RefreshCw, SettingsIcon, Users } from "lucide-react";
 
-export default function SettingsPage() {
-	const [settings, setSettings] = useState({
-		// General Settings
-		systemName: "E-QUEUE - OMSC Mamburao",
-		systemDescription:
-			"Queue Management System for Occidental Mindoro State College",
-		maintenanceMode: false,
-		allowRegistration: true,
+const SettingsSchema = z.object({
+	systemName: z.string().min(1, "Required"),
+	systemDescription: z.string().min(1, "Required"),
+	maintenanceMode: z.boolean(),
+	allowRegistration: z.boolean(),
+	maxQueueSize: z.number().min(1).max(10000),
+	voiceNotifications: z.boolean(),
+	notificationLanguage: z.enum(["english", "tagalog", "both"]),
+});
 
-		// Queue Settings
-		maxQueueSize: 100,
-		voiceNotifications: true,
-		notificationLanguage: "english",
+type SettingsForm = z.infer<typeof SettingsSchema>;
+
+export default function SettingsPage() {
+	const { toast } = useToast();
+	const [loading, setLoading] = useState(true);
+	const form = useForm<SettingsForm>({
+		resolver: zodResolver(SettingsSchema),
+		defaultValues: {
+			systemName: "",
+			systemDescription: "",
+			maintenanceMode: false,
+			allowRegistration: true,
+			maxQueueSize: 100,
+			voiceNotifications: true,
+			notificationLanguage: "english",
+		},
 	});
 
-	const handleSettingChange = (key: string, value: any) => {
-		setSettings((prev) => ({ ...prev, [key]: value }));
+	useEffect(() => {
+		let isMounted = true;
+		(async () => {
+			try {
+				const res = await fetch("/api/admin/settings", { cache: "no-store" });
+				const json = await res.json();
+				if (isMounted && json?.success && json.data) {
+					form.reset({
+						systemName: json.data.systemName,
+						systemDescription: json.data.systemDescription,
+						maintenanceMode: json.data.maintenanceMode,
+						allowRegistration: json.data.allowRegistration,
+						maxQueueSize: json.data.maxQueueSize,
+						voiceNotifications: json.data.voiceNotifications,
+						notificationLanguage: json.data.notificationLanguage,
+					});
+				}
+			} catch (e) {
+				console.error(e);
+			} finally {
+				if (isMounted) setLoading(false);
+			}
+		})();
+		return () => {
+			isMounted = false;
+		};
+	}, [form]);
+
+	const onSubmit = async (values: SettingsForm) => {
+		try {
+			const res = await fetch("/api/admin/settings", {
+				method: "PUT",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(values),
+			});
+			const json = await res.json();
+			if (json?.success) {
+				toast({ title: "Settings saved", description: "Your changes have been saved." });
+			} else {
+				toast({ title: "Save failed", description: json?.message ?? "Please try again.", variant: "destructive" });
+			}
+		} catch (e) {
+			toast({ title: "Save failed", description: "Network error.", variant: "destructive" });
+		}
 	};
 
-	const handleSave = () => {
-		// Save settings logic here
-		console.log("Saving settings:", settings);
-	};
-
-	const handleReset = () => {
-		// Reset to defaults logic here
-		console.log("Resetting to defaults");
+	const onReset = async () => {
+		try {
+			const res = await fetch("/api/admin/settings", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ action: "reset" }),
+			});
+			const json = await res.json();
+			if (json?.success && json.data) {
+				form.reset({
+					systemName: json.data.systemName,
+					systemDescription: json.data.systemDescription,
+					maintenanceMode: json.data.maintenanceMode,
+					allowRegistration: json.data.allowRegistration,
+					maxQueueSize: json.data.maxQueueSize,
+					voiceNotifications: json.data.voiceNotifications,
+					notificationLanguage: json.data.notificationLanguage,
+				});
+				toast({ title: "Settings reset", description: "Defaults restored." });
+			} else {
+				toast({ title: "Reset failed", description: json?.message ?? "Please try again.", variant: "destructive" });
+			}
+		} catch (e) {
+			toast({ title: "Reset failed", description: "Network error.", variant: "destructive" });
+		}
 	};
 
 	return (
@@ -65,16 +141,22 @@ export default function SettingsPage() {
 				{/* Header */}
 				<div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
 					<div className="flex gap-3">
-						<Button variant="outline" onClick={handleReset}>
+						<Button variant="outline" onClick={onReset} disabled={loading}>
 							<RefreshCw className="w-4 h-4 mr-2" />
 							Reset to Defaults
 						</Button>
-						<Button
-							onClick={handleSave}
-							className="bg-primary hover:bg-primary/90"
-						>
-							<Save className="w-4 h-4 mr-2" />
-							Save Changes
+						<Button onClick={form.handleSubmit(onSubmit)} disabled={loading || form.formState.isSubmitting} className="bg-primary hover:bg-primary/90">
+							{form.formState.isSubmitting ? (
+								<>
+									<RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+									Saving...
+								</>
+							) : (
+								<>
+									<Save className="w-4 h-4 mr-2" />
+									Save Changes
+								</>
+							)}
 						</Button>
 					</div>
 				</div>
@@ -96,10 +178,7 @@ export default function SettingsPage() {
 								<Label htmlFor="systemName">System Name</Label>
 								<Input
 									id="systemName"
-									value={settings.systemName}
-									onChange={(e) =>
-										handleSettingChange("systemName", e.target.value)
-									}
+									{...form.register("systemName")}
 								/>
 							</div>
 
@@ -107,11 +186,8 @@ export default function SettingsPage() {
 								<Label htmlFor="systemDescription">System Description</Label>
 								<Textarea
 									id="systemDescription"
-									value={settings.systemDescription}
-									onChange={(e) =>
-										handleSettingChange("systemDescription", e.target.value)
-									}
 									rows={3}
+									{...form.register("systemDescription")}
 								/>
 							</div>
 
@@ -124,10 +200,8 @@ export default function SettingsPage() {
 										</p>
 									</div>
 									<Switch
-										checked={settings.maintenanceMode}
-										onCheckedChange={(checked) =>
-											handleSettingChange("maintenanceMode", checked)
-										}
+										checked={form.watch("maintenanceMode")}
+										onCheckedChange={(v) => form.setValue("maintenanceMode", v)}
 									/>
 								</div>
 							</div>
@@ -140,10 +214,8 @@ export default function SettingsPage() {
 									</p>
 								</div>
 								<Switch
-									checked={settings.allowRegistration}
-									onCheckedChange={(checked) =>
-										handleSettingChange("allowRegistration", checked)
-									}
+									checked={form.watch("allowRegistration")}
+									onCheckedChange={(v) => form.setValue("allowRegistration", v)}
 								/>
 							</div>
 						</CardContent>
@@ -166,13 +238,8 @@ export default function SettingsPage() {
 								<Input
 									id="maxQueueSize"
 									type="number"
-									value={settings.maxQueueSize}
-									onChange={(e) =>
-										handleSettingChange(
-											"maxQueueSize",
-											Number.parseInt(e.target.value)
-										)
-									}
+									value={form.watch("maxQueueSize")}
+									onChange={(e) => form.setValue("maxQueueSize", Number.parseInt(e.target.value || "0"))}
 								/>
 							</div>
 
@@ -181,10 +248,8 @@ export default function SettingsPage() {
 									Voice Notification Language
 								</Label>
 								<Select
-									value={settings.notificationLanguage}
-									onValueChange={(value) =>
-										handleSettingChange("notificationLanguage", value)
-									}
+									value={form.watch("notificationLanguage")}
+									onValueChange={(value) => form.setValue("notificationLanguage", value as any)}
 								>
 									<SelectTrigger>
 										<SelectValue />
@@ -205,10 +270,8 @@ export default function SettingsPage() {
 									</p>
 								</div>
 								<Switch
-									checked={settings.voiceNotifications}
-									onCheckedChange={(checked) =>
-										handleSettingChange("voiceNotifications", checked)
-									}
+									checked={form.watch("voiceNotifications")}
+									onCheckedChange={(v) => form.setValue("voiceNotifications", v)}
 								/>
 							</div>
 						</CardContent>
