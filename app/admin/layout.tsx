@@ -1,14 +1,16 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Users, Building2, BarChart3, Settings, Search, Bell, Menu, X, LayoutDashboard } from "lucide-react"
+import { Users, Building2, BarChart3, Settings, Search, Bell, Menu, X, LayoutDashboard, LogOut } from "lucide-react"
 import { Suspense } from "react"
+import { AuthProvider, useAuth } from "@/contexts/auth-context"
+import { useRouter } from "next/navigation"
 
 const navigation = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
@@ -18,14 +20,42 @@ const navigation = [
   { name: "System Settings", href: "/admin/settings", icon: Settings },
 ]
 
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+function AdminContent({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
+  const [isRedirecting, setIsRedirecting] = useState(false)
   const pathname = usePathname()
+  const { user, userData, signOut, loading } = useAuth()
+  const router = useRouter()
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!loading && !user) {
+      setIsRedirecting(true)
+      router.push("/login")
+    }
+  }, [user, loading, router])
+
+  const handleSignOut = async () => {
+    await signOut()
+  }
+
+  // Show loading state while checking authentication
+  if (loading || isRedirecting) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Don't render anything if not authenticated (redirecting)
+  if (!user) {
+    return null
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -77,17 +107,44 @@ export default function AdminLayout({
 
           {/* User Profile */}
           <div className="p-4 border-t border-[#088395]/20">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 mb-3">
               <div className="w-8 h-8 bg-[#37B7C3] rounded-full flex items-center justify-center">
-                <span className="text-sm font-semibold text-white">SA</span>
+                <span className="text-sm font-semibold text-white">
+                  {userData?.name ? userData.name.charAt(0).toUpperCase() : "U"}
+                </span>
               </div>
               {!collapsed && (
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate">System Admin</p>
-                  <p className="text-xs text-gray-300 truncate">admin@omsc.edu.ph</p>
+                  <p className="text-sm font-medium text-white truncate">
+                    {userData?.name || "User"}
+                  </p>
+                  <p className="text-xs text-gray-300 truncate">
+                    {userData?.email || user?.email || "No email"}
+                  </p>
                 </div>
               )}
             </div>
+            {!collapsed && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleSignOut}
+                className="w-full justify-start text-gray-300 hover:text-white hover:bg-[#088395]/20"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Sign Out
+              </Button>
+            )}
+            {collapsed && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleSignOut}
+                className="w-full justify-center text-gray-300 hover:text-white hover:bg-[#088395]/20 p-2"
+              >
+                <LogOut className="w-4 h-4" />
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -124,5 +181,17 @@ export default function AdminLayout({
         <div className="p-6">{children}</div>
       </div>
     </div>
+  )
+}
+
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <AuthProvider>
+      <AdminContent>{children}</AdminContent>
+    </AuthProvider>
   )
 }

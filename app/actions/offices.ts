@@ -1,0 +1,359 @@
+"use server";
+
+import { db } from "@/firebase/firebase";
+import { 
+  collection, 
+  doc, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  getDocs, 
+  getDoc, 
+  query, 
+  where, 
+  orderBy,
+  serverTimestamp,
+  Timestamp 
+} from "firebase/firestore";
+
+export interface OfficeData {
+  id?: string;
+  name: string;
+  type: string;
+  location: string;
+  focalPerson: string;
+  focalPersonEmail?: string;
+  focalPersonPhone?: string;
+  status: "Active" | "Inactive" | "Maintenance";
+  createdAt?: string | null;
+  updatedAt?: string | null;
+}
+
+export interface OfficeService {
+  id?: string;
+  officeId: string;
+  name: string;
+  description?: string;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface OfficeResult {
+  success: boolean;
+  message: string;
+  office?: OfficeData;
+  offices?: OfficeData[];
+}
+
+// Add a new office
+export async function addOffice(data: Omit<OfficeData, 'id' | 'createdAt' | 'updatedAt'>): Promise<OfficeResult> {
+  try {
+    const officesRef = collection(db, "offices");
+    
+    const officeData = {
+      ...data,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+
+    const docRef = await addDoc(officesRef, officeData);
+    
+    // Get the created document to return with the ID
+    const createdDoc = await getDoc(docRef);
+    const office = {
+      id: docRef.id,
+      ...createdDoc.data(),
+    } as OfficeData;
+
+    return {
+      success: true,
+      message: "Office added successfully!",
+      office: office,
+    };
+  } catch (error: any) {
+    console.error("Add office error:", error);
+    return {
+      success: false,
+      message: "An error occurred while adding the office.",
+    };
+  }
+}
+
+// Get all offices
+export async function getAllOffices(): Promise<OfficeResult> {
+  try {
+    const officesRef = collection(db, "offices");
+    const q = query(officesRef, orderBy("createdAt", "desc"));
+    const querySnapshot = await getDocs(q);
+    
+    const offices: OfficeData[] = [];
+    querySnapshot.forEach((doc) => {
+      const data = doc.data() as any;
+      offices.push({
+        id: doc.id,
+        ...data,
+        createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : data.createdAt ?? null,
+        updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate().toISOString() : data.updatedAt ?? null,
+      });
+    });
+
+    return {
+      success: true,
+      offices: offices,
+      message: "Offices retrieved successfully!",
+    };
+  } catch (error: any) {
+    console.error("Get all offices error:", error);
+    return {
+      success: false,
+      message: "An error occurred while fetching offices.",
+    };
+  }
+}
+
+// Get office by ID
+export async function getOfficeById(officeId: string): Promise<OfficeResult> {
+  try {
+    const officeRef = doc(db, "offices", officeId);
+    const officeDoc = await getDoc(officeRef);
+    
+    if (!officeDoc.exists()) {
+      return {
+        success: false,
+        message: "Office not found.",
+      };
+    }
+
+    const data = officeDoc.data() as any;
+    const office: OfficeData = {
+      id: officeDoc.id,
+      ...data,
+      createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : data.createdAt ?? null,
+      updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate().toISOString() : data.updatedAt ?? null,
+    };
+
+    return {
+      success: true,
+      office: office,
+      message: "Office retrieved successfully!",
+    };
+  } catch (error: any) {
+    console.error("Get office by ID error:", error);
+    return {
+      success: false,
+      message: "An error occurred while fetching the office.",
+    };
+  }
+}
+
+// Update office
+export async function updateOffice(officeId: string, updates: Partial<OfficeData>): Promise<OfficeResult> {
+  try {
+    const officeRef = doc(db, "offices", officeId);
+    
+    const updateData = {
+      ...updates,
+      updatedAt: serverTimestamp(),
+    };
+
+    await updateDoc(officeRef, updateData);
+    
+    // Get the updated document
+    const updatedDoc = await getDoc(officeRef);
+    const office = {
+      id: updatedDoc.id,
+      ...updatedDoc.data(),
+    } as OfficeData;
+
+    return {
+      success: true,
+      message: "Office updated successfully!",
+      office: office,
+    };
+  } catch (error: any) {
+    console.error("Update office error:", error);
+    return {
+      success: false,
+      message: "An error occurred while updating the office.",
+    };
+  }
+}
+
+// Delete office
+export async function deleteOffice(officeId: string): Promise<OfficeResult> {
+  try {
+    const officeRef = doc(db, "offices", officeId);
+    await deleteDoc(officeRef);
+    
+    return {
+      success: true,
+      message: "Office deleted successfully!",
+    };
+  } catch (error: any) {
+    console.error("Delete office error:", error);
+    return {
+      success: false,
+      message: "An error occurred while deleting the office.",
+    };
+  }
+}
+
+// Get offices by status
+export async function getOfficesByStatus(status: "Active" | "Inactive" | "Maintenance"): Promise<OfficeResult> {
+  try {
+    const officesRef = collection(db, "offices");
+    const q = query(officesRef, where("status", "==", status), orderBy("createdAt", "desc"));
+    const querySnapshot = await getDocs(q);
+    
+    const offices: OfficeData[] = [];
+    querySnapshot.forEach((doc) => {
+      const data = doc.data() as any;
+      offices.push({
+        id: doc.id,
+        ...data,
+        createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : data.createdAt ?? null,
+        updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate().toISOString() : data.updatedAt ?? null,
+      });
+    });
+
+    return {
+      success: true,
+      offices: offices,
+      message: `Offices with status '${status}' retrieved successfully!`,
+    };
+  } catch (error: any) {
+    console.error("Get offices by status error:", error);
+    return {
+      success: false,
+      message: "An error occurred while fetching offices by status.",
+    };
+  }
+}
+
+// Update office status
+export async function updateOfficeStatus(officeId: string, status: "Active" | "Inactive" | "Maintenance"): Promise<OfficeResult> {
+  try {
+    const officeRef = doc(db, "offices", officeId);
+    await updateDoc(officeRef, {
+      status: status,
+      updatedAt: serverTimestamp(),
+    });
+    
+    return {
+      success: true,
+      message: `Office status updated to '${status}' successfully!`,
+    };
+  } catch (error: any) {
+    console.error("Update office status error:", error);
+    return {
+      success: false,
+      message: "An error occurred while updating office status.",
+    };
+  }
+}
+
+// Add service to office
+export async function addOfficeService(officeId: string, serviceData: Omit<OfficeService, 'id' | 'officeId' | 'createdAt' | 'updatedAt'>): Promise<{ success: boolean; message: string; service?: OfficeService }> {
+  try {
+    const servicesRef = collection(db, "office_services");
+    
+    const service = {
+      ...serviceData,
+      officeId,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+
+    const docRef = await addDoc(servicesRef, service);
+    
+    return {
+      success: true,
+      message: "Service added successfully!",
+      service: {
+        id: docRef.id,
+        officeId,
+        ...service,
+      } as OfficeService,
+    };
+  } catch (error: any) {
+    console.error("Add office service error:", error);
+    return {
+      success: false,
+      message: "An error occurred while adding the service.",
+    };
+  }
+}
+
+// Get services for an office
+export async function getOfficeServices(officeId: string): Promise<{ success: boolean; services?: OfficeService[]; message?: string }> {
+  try {
+    const servicesRef = collection(db, "office_services");
+    const q = query(servicesRef, where("officeId", "==", officeId), orderBy("createdAt", "desc"));
+    const querySnapshot = await getDocs(q);
+    
+    const services: OfficeService[] = [];
+    querySnapshot.forEach((doc) => {
+      services.push({
+        id: doc.id,
+        ...doc.data(),
+      } as OfficeService);
+    });
+
+    return {
+      success: true,
+      services: services,
+      message: "Services retrieved successfully!",
+    };
+  } catch (error: any) {
+    console.error("Get office services error:", error);
+    return {
+      success: false,
+      message: "An error occurred while fetching services.",
+    };
+  }
+}
+
+// Update office service
+export async function updateOfficeService(serviceId: string, updates: Partial<OfficeService>): Promise<{ success: boolean; message: string }> {
+  try {
+    const serviceRef = doc(db, "office_services", serviceId);
+    
+    const updateData = {
+      ...updates,
+      updatedAt: serverTimestamp(),
+    };
+
+    await updateDoc(serviceRef, updateData);
+    
+    return {
+      success: true,
+      message: "Service updated successfully!",
+    };
+  } catch (error: any) {
+    console.error("Update office service error:", error);
+    return {
+      success: false,
+      message: "An error occurred while updating the service.",
+    };
+  }
+}
+
+// Delete office service
+export async function deleteOfficeService(serviceId: string): Promise<{ success: boolean; message: string }> {
+  try {
+    const serviceRef = doc(db, "office_services", serviceId);
+    await deleteDoc(serviceRef);
+    
+    return {
+      success: true,
+      message: "Service deleted successfully!",
+    };
+  } catch (error: any) {
+    console.error("Delete office service error:", error);
+    return {
+      success: false,
+      message: "An error occurred while deleting the service.",
+    };
+  }
+}

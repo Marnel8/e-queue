@@ -1,0 +1,14 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+
+Always use React-Hook-Form and Zod for handling forms.
+Show form errors.
+
+while submitting the form disable submit button and add loading indicator.
+
+Always add success and error toasts after form submission.
+
+

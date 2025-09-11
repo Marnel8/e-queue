@@ -1,0 +1,8 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+
+
+put all functions related to firebase on /app/actions folder

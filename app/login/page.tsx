@@ -1,10 +1,10 @@
 "use client";
 
 import type React from "react";
-
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -15,24 +15,44 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Eye, EyeOff, ArrowLeft, AlertTriangle, Shield } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft, AlertTriangle, Shield, Loader2 } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { signInClient } from "@/app/actions/client-auth";
+import { useToast } from "@/hooks/use-toast";
+
+// Zod schema for form validation
+const loginSchema = z.object({
+	email: z.string().email("Please enter a valid email address"),
+	password: z.string().min(6, "Password must be at least 6 characters"),
+	rememberMe: z.boolean().optional(),
+});
+
+type LoginFormData = z.infer<typeof loginSchema>;
+
+// Role-based redirection mapping
+const getRedirectPath = (role: string) => {
+	switch (role) {
+		case "system-admin":
+			return "/admin";
+		case "office-admin":
+			return "/office-admin";
+		case "staff":
+			return "/staff";
+		case "customer":
+			return "/customer";
+		default:
+			return "/";
+	}
+};
 
 export default function LoginPage() {
 	const [showPassword, setShowPassword] = useState(false);
-	const [userRole, setUserRole] = useState("");
-	const [formData, setFormData] = useState({
-		email: "",
-		password: "",
-		rememberMe: false,
-	});
+	const [isLoading, setIsLoading] = useState(false);
+	const router = useRouter();
+	const { toast } = useToast();
 
 	// Login attempt tracking
 	const [loginAttempts, setLoginAttempts] = useState(0);
@@ -42,6 +62,24 @@ export default function LoginPage() {
 
 	// Hydration handling
 	const [mounted, setMounted] = useState(false);
+
+	// React Hook Form setup
+	const {
+		register,
+		handleSubmit,
+		formState: { errors },
+		setValue,
+		watch,
+	} = useForm<LoginFormData>({
+		resolver: zodResolver(loginSchema),
+		defaultValues: {
+			email: "",
+			password: "",
+			rememberMe: false,
+		},
+	});
+
+	const rememberMe = watch("rememberMe");
 
 	// Check for existing lockout on component mount
 	useEffect(() => {
@@ -75,58 +113,82 @@ export default function LoginPage() {
 		}
 	}, []);
 
-	const handleSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
-
+	const onSubmit = async (data: LoginFormData) => {
 		if (isLocked) {
 			return;
 		}
 
-		// Simulate login attempt
-		const isSuccessful = Math.random() > 0.7; // 30% success rate for demo
+		setIsLoading(true);
 
-		if (isSuccessful) {
-			// Successful login - reset attempts
-			localStorage.removeItem("login_attempts");
-			localStorage.removeItem("login_lockout");
-			setLoginAttempts(0);
-			setIsLocked(false);
-			console.log("Login successful:", { ...formData, role: userRole });
-		} else {
-			// Failed login - increment attempts
-			const newAttempts = loginAttempts + 1;
-			setLoginAttempts(newAttempts);
-			localStorage.setItem("login_attempts", newAttempts.toString());
-
-			// Check if account should be locked
-			if (newAttempts >= 3) {
-				const lockoutDate = new Date();
-				localStorage.setItem("login_lockout", lockoutDate.toISOString());
-				setIsLocked(true);
-				setLockoutTime(lockoutDate);
-
-				// Log violation
-				const violations = JSON.parse(
-					localStorage.getItem("equeue_violations") || "[]"
-				);
-				violations.push({
-					id: Date.now(),
-					type: "login_attempts_exceeded",
-					when: lockoutDate.toISOString(),
-					detail: `Account locked due to ${newAttempts} consecutive failed login attempts for ${formData.email}`,
-					email: formData.email,
-					role: userRole,
-				});
-				localStorage.setItem("equeue_violations", JSON.stringify(violations));
-
-				setShowSecurityAlert(true);
-			}
-
-			console.log("Login failed:", {
-				...formData,
-				role: userRole,
-				attempts: newAttempts,
+		try {
+			// Attempt Firebase authentication
+			const result = await signInClient({
+				email: data.email,
+				password: data.password,
 			});
+
+			if (result.success && result.userData) {
+				// Successful login - reset attempts
+				localStorage.removeItem("login_attempts");
+				localStorage.removeItem("login_lockout");
+				setLoginAttempts(0);
+				setIsLocked(false);
+
+				// Show success message
+				toast({
+					title: "Success",
+					description: result.message,
+				});
+
+				// Redirect based on user role
+				const redirectPath = getRedirectPath(result.userData.role);
+				router.push(redirectPath);
+			} else {
+				// Failed login - increment attempts
+				const newAttempts = loginAttempts + 1;
+				setLoginAttempts(newAttempts);
+				localStorage.setItem("login_attempts", newAttempts.toString());
+
+				// Show error message
+				toast({
+					title: "Login Failed",
+					description: result.message,
+					variant: "destructive",
+				});
+
+				// Check if account should be locked
+				if (newAttempts >= 3) {
+					const lockoutDate = new Date();
+					localStorage.setItem("login_lockout", lockoutDate.toISOString());
+					setIsLocked(true);
+					setLockoutTime(lockoutDate);
+
+					// Log violation
+					const violations = JSON.parse(
+						localStorage.getItem("equeue_violations") || "[]"
+					);
+					violations.push({
+						id: Date.now(),
+						type: "login_attempts_exceeded",
+						when: lockoutDate.toISOString(),
+						detail: `Account locked due to ${newAttempts} consecutive failed login attempts for ${data.email}`,
+						email: data.email,
+						role: result.userData?.role || "unknown",
+					});
+					localStorage.setItem("equeue_violations", JSON.stringify(violations));
+
+					setShowSecurityAlert(true);
+				}
+			}
+		} catch (error) {
+			console.error("Login error:", error);
+			toast({
+				title: "Error",
+				description: "An unexpected error occurred. Please try again.",
+				variant: "destructive",
+			});
+		} finally {
+			setIsLoading(false);
 		}
 	};
 
@@ -295,42 +357,10 @@ export default function LoginPage() {
 					<Card>
 						<CardContent className="p-6">
 							<form
-								onSubmit={handleSubmit}
+								onSubmit={handleSubmit(onSubmit)}
 								className="space-y-4"
 								suppressHydrationWarning
 							>
-								{/* Role Selection */}
-								<div className="space-y-2">
-									<Label htmlFor="role">Select Role</Label>
-									{mounted ? (
-										<Select
-											key="role-select"
-											value={userRole}
-											onValueChange={setUserRole}
-											required
-										>
-											<SelectTrigger>
-												<SelectValue placeholder="Choose your role" />
-											</SelectTrigger>
-											<SelectContent>
-												<SelectItem value="customer">
-													Customer / Student
-												</SelectItem>
-												<SelectItem value="staff">Office Staff</SelectItem>
-												<SelectItem value="office-admin">
-													Office Admin
-												</SelectItem>
-												<SelectItem value="system-admin">
-													System Admin
-												</SelectItem>
-											</SelectContent>
-										</Select>
-									) : (
-										<div className="h-9 w-full rounded-md border bg-muted px-3 py-2 text-sm text-muted-foreground">
-											Choose your role
-										</div>
-									)}
-								</div>
 
 								{/* Email */}
 								<div className="space-y-2">
@@ -338,13 +368,13 @@ export default function LoginPage() {
 									<Input
 										id="email"
 										type="email"
-										value={formData.email}
-										onChange={(e) =>
-											setFormData({ ...formData, email: e.target.value })
-										}
-										required
-										disabled={isLocked}
+										{...register("email")}
+										disabled={isLocked || isLoading}
+										className={errors.email ? "border-red-500" : ""}
 									/>
+									{errors.email && (
+										<p className="text-sm text-red-500">{errors.email.message}</p>
+									)}
 								</div>
 
 								{/* Password */}
@@ -354,12 +384,9 @@ export default function LoginPage() {
 										<Input
 											id="password"
 											type={mounted && showPassword ? "text" : "password"}
-											value={formData.password}
-											onChange={(e) =>
-												setFormData({ ...formData, password: e.target.value })
-											}
-											required
-											disabled={isLocked}
+											{...register("password")}
+											disabled={isLocked || isLoading}
+											className={errors.password ? "border-red-500" : ""}
 										/>
 										{mounted && (
 											<Button
@@ -369,7 +396,7 @@ export default function LoginPage() {
 												size="sm"
 												className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
 												onClick={() => setShowPassword(!showPassword)}
-												disabled={isLocked}
+												disabled={isLocked || isLoading}
 											>
 												{showPassword ? (
 													<EyeOff key="eye-off-icon" className="h-4 w-4" />
@@ -379,6 +406,9 @@ export default function LoginPage() {
 											</Button>
 										)}
 									</div>
+									{errors.password && (
+										<p className="text-sm text-red-500">{errors.password.message}</p>
+									)}
 								</div>
 
 								{/* Remember Me */}
@@ -387,14 +417,11 @@ export default function LoginPage() {
 										<Checkbox
 											key="remember-checkbox"
 											id="remember"
-											checked={formData.rememberMe}
+											checked={rememberMe}
 											onCheckedChange={(checked) =>
-												setFormData({
-													...formData,
-													rememberMe: checked as boolean,
-												})
+												setValue("rememberMe", checked as boolean)
 											}
-											disabled={isLocked}
+											disabled={isLocked || isLoading}
 										/>
 									) : (
 										<div className="h-4 w-4 rounded border bg-muted" />
@@ -429,9 +456,16 @@ export default function LoginPage() {
 										key="sign-in-button"
 										type="submit"
 										className="w-full gradient-primary text-white"
-										disabled={isLocked || !userRole}
+										disabled={isLocked || isLoading}
 									>
-										Sign In
+										{isLoading ? (
+											<>
+												<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+												Signing In...
+											</>
+										) : (
+											"Sign In"
+										)}
 									</Button>
 								) : (
 									<div className="h-9 w-full rounded-md bg-muted animate-pulse" />
@@ -467,6 +501,12 @@ export default function LoginPage() {
 								Don't have an account?{" "}
 								<Link href="/register" className="text-primary hover:underline">
 									Sign up
+								</Link>
+							</div>
+							<div className="text-sm text-muted-foreground">
+								Need admin access?{" "}
+								<Link href="/admin-signup" className="text-primary hover:underline font-medium">
+									Admin Sign Up
 								</Link>
 							</div>
 						</div>

@@ -16,6 +16,7 @@ import {
 	Shield,
 	AlertTriangle,
 } from "lucide-react";
+import { useAuth } from "@/contexts/auth-context";
 
 const navigation = [
 	{ name: "Dashboard", href: "/admin", icon: LayoutDashboard },
@@ -33,6 +34,11 @@ interface SidebarProps {
 
 export function Sidebar({ collapsed, onToggle }: SidebarProps) {
 	const pathname = usePathname();
+	const { user, userData, signOut } = useAuth();
+
+	const handleSignOut = async () => {
+		await signOut();
+	};
 
 	return (
 		<div
@@ -104,21 +110,33 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
 				{!collapsed && (
 					<div className="flex items-center gap-3 mb-3">
 						<div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-							<Shield className="w-4 h-4 text-primary-foreground" />
+							<span className="text-sm font-semibold text-primary-foreground">
+								{userData?.name ? userData.name.charAt(0).toUpperCase() : "U"}
+							</span>
 						</div>
 						<div className="flex-1 min-w-0">
 							<p className="text-sm font-medium text-foreground truncate">
-								System Admin
+								{userData?.name || "User"}
 							</p>
 							<p className="text-xs text-muted-foreground truncate">
-								admin@omsc.edu.ph
+								{userData?.email || user?.email || "No email"}
 							</p>
+						</div>
+					</div>
+				)}
+				{collapsed && (
+					<div className="flex items-center justify-center mb-3">
+						<div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+							<span className="text-sm font-semibold text-primary-foreground">
+								{userData?.name ? userData.name.charAt(0).toUpperCase() : "U"}
+							</span>
 						</div>
 					</div>
 				)}
 				<Button
 					variant="ghost"
 					size="sm"
+					onClick={handleSignOut}
 					className={cn(
 						"w-full justify-start text-muted-foreground hover:text-foreground",
 						collapsed && "justify-center px-2"
