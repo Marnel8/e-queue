@@ -152,7 +152,6 @@ export async function getAdminMetrics(): Promise<{ success: boolean; data?: Admi
 
     return { success: true, data };
   } catch (error) {
-    console.error("getAdminMetrics error:", error);
     return { success: false, message: "Failed to load admin metrics" };
   }
 }
@@ -293,7 +292,6 @@ export async function getReportsData(range: "24h" | "7d" | "30d" | "90d" = "7d")
 
     return { success: true, data };
   } catch (error) {
-    console.error("getReportsData error:", error);
     return { success: false, message: "Failed to load reports data" };
   }
 }

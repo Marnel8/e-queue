@@ -1,5 +1,7 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/auth-context";
 import {
 	Card,
 	CardContent,
@@ -38,13 +40,59 @@ import {
 	Ban,
 	CheckCircle,
 	XCircle,
-	TrendingUp,
 	Users,
 	AlertCircle,
 } from "lucide-react";
 import { ViolationsDisplay } from "@/components/ui/violations-display";
 
+interface ViolationStats {
+	total: number;
+	active: number;
+	resolved: number;
+	pending: number;
+	byType: Record<string, number>;
+	bySeverity: Record<string, number>;
+}
+
 export default function OfficeAdminViolationsPage() {
+	const { user } = useAuth();
+	const [stats, setStats] = useState<ViolationStats>({
+		total: 0,
+		active: 0,
+		resolved: 0,
+		pending: 0,
+		byType: {},
+		bySeverity: {}
+	});
+	const [loading, setLoading] = useState(true);
+
+	// Load violation statistics
+	useEffect(() => {
+		const loadStats = async () => {
+			setLoading(true);
+			try {
+				const response = await fetch("/api/violations/stats");
+				if (response.ok) {
+					const data = await response.json();
+					setStats(data.stats || {
+						total: 0,
+						active: 0,
+						resolved: 0,
+						pending: 0,
+						byType: {},
+						bySeverity: {}
+					});
+				}
+			} catch (error) {
+				console.error("Error loading violation stats:", error);
+			} finally {
+				setLoading(false);
+			}
+		};
+
+		loadStats();
+	}, []);
+
 	return (
 		<div className="space-y-6">
 			{/* Page Header */}
@@ -67,7 +115,9 @@ export default function OfficeAdminViolationsPage() {
 						</div>
 					</CardHeader>
 					<CardContent className="pt-0">
-						<div className="text-3xl font-bold text-red-600 mb-1">12</div>
+						<div className="text-3xl font-bold text-red-600 mb-1">
+							{loading ? "..." : stats.active}
+						</div>
 						<p className="text-sm text-gray-500">
 							Requires immediate attention
 						</p>
@@ -84,7 +134,9 @@ export default function OfficeAdminViolationsPage() {
 						</div>
 					</CardHeader>
 					<CardContent className="pt-0">
-						<div className="text-3xl font-bold text-yellow-600 mb-1">8</div>
+						<div className="text-3xl font-bold text-yellow-600 mb-1">
+							{loading ? "..." : stats.pending}
+						</div>
 						<p className="text-sm text-gray-500">Awaiting investigation</p>
 					</CardContent>
 				</Card>
@@ -99,7 +151,9 @@ export default function OfficeAdminViolationsPage() {
 						</div>
 					</CardHeader>
 					<CardContent className="pt-0">
-						<div className="text-3xl font-bold text-green-600 mb-1">45</div>
+						<div className="text-3xl font-bold text-green-600 mb-1">
+							{loading ? "..." : stats.resolved}
+						</div>
 						<p className="text-sm text-gray-500">Successfully handled</p>
 					</CardContent>
 				</Card>
@@ -107,15 +161,17 @@ export default function OfficeAdminViolationsPage() {
 				<Card className="border-0 shadow-sm hover:shadow-md transition-all duration-200 bg-gradient-to-br from-white to-blue-50/50">
 					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
 						<CardTitle className="text-sm font-semibold text-gray-600">
-							Total Users
+							Total Violations
 						</CardTitle>
 						<div className="p-2 bg-blue-500/10 rounded-lg">
 							<Users className="h-5 w-5 text-blue-600" />
 						</div>
 					</CardHeader>
 					<CardContent className="pt-0">
-						<div className="text-3xl font-bold text-blue-600 mb-1">2,847</div>
-						<p className="text-sm text-gray-500">System users</p>
+						<div className="text-3xl font-bold text-blue-600 mb-1">
+							{loading ? "..." : stats.total}
+						</div>
+						<p className="text-sm text-gray-500">All violations</p>
 					</CardContent>
 				</Card>
 			</div>
@@ -139,41 +195,33 @@ export default function OfficeAdminViolationsPage() {
 						</CardHeader>
 						<CardContent className="space-y-4">
 							<div className="space-y-3">
-								<div className="flex items-center justify-between">
-									<div className="flex items-center gap-2">
-										<div className="w-3 h-3 bg-red-500 rounded-full"></div>
-										<span className="text-sm font-medium">Security</span>
+								{Object.entries(stats.byType).map(([type, count]) => {
+									const typeColors = {
+										security: { bg: "bg-red-500", badge: "bg-red-100 text-red-700" },
+										fraud: { bg: "bg-orange-500", badge: "bg-orange-100 text-orange-700" },
+										abuse: { bg: "bg-yellow-500", badge: "bg-yellow-100 text-yellow-700" },
+										attendance: { bg: "bg-blue-500", badge: "bg-blue-100 text-blue-700" },
+										compliance: { bg: "bg-purple-500", badge: "bg-purple-100 text-purple-700" }
+									};
+									const colors = typeColors[type as keyof typeof typeColors] || { bg: "bg-gray-500", badge: "bg-gray-100 text-gray-700" };
+									
+									return (
+										<div key={type} className="flex items-center justify-between">
+											<div className="flex items-center gap-2">
+												<div className={`w-3 h-3 ${colors.bg} rounded-full`}></div>
+												<span className="text-sm font-medium capitalize">{type}</span>
+											</div>
+											<Badge className={colors.badge}>
+												{loading ? "..." : count}
+											</Badge>
+										</div>
+									);
+								})}
+								{Object.keys(stats.byType).length === 0 && !loading && (
+									<div className="text-center text-gray-500 text-sm py-4">
+										No violations by type
 									</div>
-									<Badge className="bg-red-100 text-red-700">8</Badge>
-								</div>
-								<div className="flex items-center justify-between">
-									<div className="flex items-center gap-2">
-										<div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-										<span className="text-sm font-medium">Fraud</span>
-									</div>
-									<Badge className="bg-orange-100 text-orange-700">3</Badge>
-								</div>
-								<div className="flex items-center justify-between">
-									<div className="flex items-center gap-2">
-										<div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-										<span className="text-sm font-medium">Abuse</span>
-									</div>
-									<Badge className="bg-yellow-100 text-yellow-700">5</Badge>
-								</div>
-								<div className="flex items-center justify-between">
-									<div className="flex items-center gap-2">
-										<div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-										<span className="text-sm font-medium">Attendance</span>
-									</div>
-									<Badge className="bg-blue-100 text-blue-700">2</Badge>
-								</div>
-								<div className="flex items-center justify-between">
-									<div className="flex items-center gap-2">
-										<div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-										<span className="text-sm font-medium">Compliance</span>
-									</div>
-									<Badge className="bg-purple-100 text-purple-700">4</Badge>
-								</div>
+								)}
 							</div>
 						</CardContent>
 					</Card>
@@ -232,43 +280,6 @@ export default function OfficeAdminViolationsPage() {
 						</CardContent>
 					</Card>
 
-					{/* Quick Actions */}
-					<Card>
-						<CardHeader>
-							<CardTitle className="text-lg font-semibold text-[#071952]">
-								Quick Actions
-							</CardTitle>
-							<CardDescription>
-								Common violation management tasks
-							</CardDescription>
-						</CardHeader>
-						<CardContent className="space-y-3">
-							<Button
-								variant="outline"
-								className="w-full justify-start"
-								size="sm"
-							>
-								<Shield className="w-4 h-4 mr-2" />
-								Export Violations Report
-							</Button>
-							<Button
-								variant="outline"
-								className="w-full justify-start"
-								size="sm"
-							>
-								<UserX className="w-4 h-4 mr-2" />
-								Bulk User Ban
-							</Button>
-							<Button
-								variant="outline"
-								className="w-full justify-start"
-								size="sm"
-							>
-								<TrendingUp className="w-4 h-4 mr-2" />
-								View Analytics
-							</Button>
-						</CardContent>
-					</Card>
 				</div>
 			</div>
 		</div>

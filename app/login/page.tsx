@@ -35,7 +35,7 @@ const getRedirectPath = (role: string) => {
 	switch (role) {
 		case "system-admin":
 			return "/admin";
-		case "office-admin":
+		case "Office Admin":
 			return "/office-admin";
 		case "staff":
 			return "/staff";
@@ -57,6 +57,12 @@ export default function LoginPage() {
 	const [isLocked, setIsLocked] = useState(false);
 	const [lockoutTime, setLockoutTime] = useState<Date | null>(null);
 	const [showSecurityAlert, setShowSecurityAlert] = useState(false);
+
+	// Field-specific errors
+	const [fieldErrors, setFieldErrors] = useState<{
+		email?: string;
+		password?: string;
+	}>({});
 
 	// Hydration handling
 	const [mounted, setMounted] = useState(false);
@@ -112,6 +118,8 @@ export default function LoginPage() {
 		}
 
 		setIsLoading(true);
+		// Clear previous field errors
+		setFieldErrors({});
 
 		try {
 			// Attempt Firebase authentication
@@ -142,12 +150,19 @@ export default function LoginPage() {
 				setLoginAttempts(newAttempts);
 				localStorage.setItem("login_attempts", newAttempts.toString());
 
-				// Show error message
-				toast({
-					title: "Login Failed",
-					description: result.message,
-					variant: "destructive",
-				});
+				// Set field-specific errors based on error message
+				if (result.message.toLowerCase().includes('email') || result.message.toLowerCase().includes('user')) {
+					setFieldErrors({ email: result.message });
+				} else if (result.message.toLowerCase().includes('password') || result.message.toLowerCase().includes('invalid')) {
+					setFieldErrors({ password: result.message });
+				} else {
+					// General error - show in toast
+					toast({
+						title: "Login Failed",
+						description: result.message,
+						variant: "destructive",
+					});
+				}
 
 				// Check if account should be locked
 				if (newAttempts >= 3) {
@@ -174,12 +189,30 @@ export default function LoginPage() {
 				}
 			}
 		} catch (error) {
-			console.error("Login error:", error);
-			toast({
-				title: "Error",
-				description: "An unexpected error occurred. Please try again.",
-				variant: "destructive",
-			});
+			// Extract error message for user display
+			let errorMessage = "An unexpected error occurred. Please try again.";
+			
+			if (error instanceof Error) {
+				errorMessage = error.message;
+			} else if (typeof error === 'string') {
+				errorMessage = error;
+			} else if (error && typeof error === 'object' && 'message' in error) {
+				errorMessage = String(error.message);
+			}
+			
+			// Set field-specific errors based on error message
+			if (errorMessage.toLowerCase().includes('email') || errorMessage.toLowerCase().includes('user')) {
+				setFieldErrors({ email: errorMessage });
+			} else if (errorMessage.toLowerCase().includes('password') || errorMessage.toLowerCase().includes('invalid')) {
+				setFieldErrors({ password: errorMessage });
+			} else {
+				// General error - show in toast
+				toast({
+					title: "Error",
+					description: errorMessage,
+					variant: "destructive",
+				});
+			}
 		} finally {
 			setIsLoading(false);
 		}
@@ -359,15 +392,18 @@ export default function LoginPage() {
 								<div className="space-y-2">
 									<Label htmlFor="email">Email Address</Label>
 									<Input
- 										id="email"
- 										type="email"
- 										placeholder="Enter your email"
- 										{...register("email")}
- 										disabled={isLocked || isLoading}
- 										className={`bg-white dark:bg-neutral-900 border ${errors.email ? "border-red-500" : "border-gray-300 dark:border-gray-700"} text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary`}
- 									/>
+										id="email"
+										type="email"
+										placeholder="Enter your email"
+										{...register("email")}
+										disabled={isLocked || isLoading}
+										className={`bg-white dark:bg-neutral-900 border ${errors.email || fieldErrors.email ? "border-red-500" : "border-gray-300 dark:border-gray-700"} text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary`}
+									/>
 									{errors.email && (
 										<p className="text-sm text-red-500">{errors.email.message}</p>
+									)}
+									{fieldErrors.email && (
+										<p className="text-sm text-red-500">{fieldErrors.email}</p>
 									)}
 								</div>
 
@@ -381,7 +417,7 @@ export default function LoginPage() {
 											placeholder="Enter your password"
 											{...register("password")}
 											disabled={isLocked || isLoading}
-											className={`bg-white dark:bg-neutral-900 border ${errors.password ? "border-red-500" : "border-gray-300 dark:border-gray-700"} text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary`}
+											className={`bg-white dark:bg-neutral-900 border ${errors.password || fieldErrors.password ? "border-red-500" : "border-gray-300 dark:border-gray-700"} text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary`}
 										/>
 										{mounted && (
 											<Button
@@ -403,6 +439,9 @@ export default function LoginPage() {
 									</div>
 									{errors.password && (
 										<p className="text-sm text-red-500">{errors.password.message}</p>
+									)}
+									{fieldErrors.password && (
+										<p className="text-sm text-red-500">{fieldErrors.password}</p>
 									)}
 								</div>
 

@@ -26,7 +26,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(result, { status: 400 });
     }
   } catch (error) {
-    console.error("API signup error:", error);
     return NextResponse.json(
       { success: false, message: "Internal server error" },
       { status: 500 }

@@ -30,15 +30,9 @@ const addUserSchema = z.object({
   name: z.string().min(2, "Full name is required"),
   email: z.string().email("Invalid email"),
   password: z.string().min(6, "Min 6 characters"),
-  role: z.enum(["System Admin", "Office Admin", "Office Staff", "Customer"]),
+  role: z.enum(["system-admin", "office-admin", "staff", "customer"]),
   officeId: z.string().optional().nullable(),
   phone: z.string().optional().nullable(),
-  address: z.string().optional().nullable(),
-  bio: z.string().optional().nullable(),
-  department: z.string().optional().nullable(),
-  position: z.string().optional().nullable(),
-  workStart: z.string().optional().nullable(),
-  workEnd: z.string().optional().nullable(),
 })
 
 type AddUserFormValues = z.infer<typeof addUserSchema>
@@ -60,9 +54,9 @@ interface OfficeOption { id: string; name: string }
 
 const getRoleIcon = (role: string) => {
   switch (role) {
-    case "System Admin":
+    case "system-admin":
       return <Shield className="w-4 h-4" />
-    case "Office Admin":
+    case "office-admin":
       return <Building2 className="w-4 h-4" />
     default:
       return <User className="w-4 h-4" />
@@ -71,12 +65,22 @@ const getRoleIcon = (role: string) => {
 
 const getRoleBadge = (role: string) => {
   const variants = {
-    "System Admin": "bg-red-100 text-red-800",
-    "Office Admin": "bg-blue-100 text-blue-800",
-    "Office Staff": "bg-green-100 text-green-800",
-    Customer: "bg-gray-100 text-gray-800",
+    "system-admin": "bg-red-100 text-red-800",
+    "office-admin": "bg-blue-100 text-blue-800",
+    "staff": "bg-green-100 text-green-800",
+    "customer": "bg-gray-100 text-gray-800",
   }
   return variants[role as keyof typeof variants] || "bg-gray-100 text-gray-800"
+}
+
+const getRoleDisplayName = (role: string) => {
+  const displayNames = {
+    "system-admin": "System Admin",
+    "office-admin": "Office Admin", 
+    "staff": "Office Staff",
+    "customer": "Customer",
+  }
+  return displayNames[role as keyof typeof displayNames] || role
 }
 
 export default function UserManagement() {
@@ -94,7 +98,7 @@ export default function UserManagement() {
 
   const form = useForm<AddUserFormValues>({
     resolver: zodResolver(addUserSchema),
-    defaultValues: { role: "Office Staff", officeId: null } as any,
+    defaultValues: { role: "staff", officeId: null } as any,
   })
 
   const permForm = useForm<PermissionsFormValues>({
@@ -191,19 +195,13 @@ export default function UserManagement() {
                         role: values.role,
                         officeId: values.officeId ?? null,
                         phone: values.phone ?? null,
-                        address: values.address ?? null,
-                        bio: values.bio ?? null,
-                        department: values.department ?? null,
-                        position: values.position ?? null,
-                        workStart: values.workStart ?? null,
-                        workEnd: values.workEnd ?? null,
                       }),
                     })
                     const data = await res.json()
                     if (!res.ok || !data.success) throw new Error(data.message || "Failed")
                     toast({ title: "Success", description: "User created." })
                     setOpen(false)
-                    form.reset({ role: "Office Staff", officeId: null } as any)
+                    form.reset({ role: "staff", officeId: null } as any)
                     const uRes = await fetch("/api/users")
                     const u = await uRes.json()
                     if (u.success && u.users) setUsers(u.users as any)
@@ -229,30 +227,6 @@ export default function UserManagement() {
                     <Label className="text-gray-900">Phone (optional)</Label>
                     <Input className="bg-white text-gray-900 placeholder:text-gray-500 border border-gray-300 focus-visible:ring-[#088395]" placeholder="e.g. +63 900 000 0000" {...form.register("phone")} />
                   </div>
-                  <div className="space-y-1.5 md:col-span-2">
-                    <Label className="text-gray-900">Address (optional)</Label>
-                    <Input className="bg-white text-gray-900 placeholder:text-gray-500 border border-gray-300 focus-visible:ring-[#088395]" placeholder="Street, City, Province" {...form.register("address")} />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-gray-900">Position (optional)</Label>
-                    <Input className="bg-white text-gray-900 placeholder:text-gray-500 border border-gray-300 focus-visible:ring-[#088395]" placeholder="e.g. Office Administrator" {...form.register("position")} />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-gray-900">Department (optional)</Label>
-                    <Input className="bg-white text-gray-900 placeholder:text-gray-500 border border-gray-300 focus-visible:ring-[#088395]" placeholder="e.g. Registrar Office" {...form.register("department")} />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-gray-900">Work start (optional)</Label>
-                    <Input className="bg-white text-gray-900 placeholder:text-gray-500 border border-gray-300 focus-visible:ring-[#088395]" placeholder="08:00" {...form.register("workStart")} />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-gray-900">Work end (optional)</Label>
-                    <Input className="bg-white text-gray-900 placeholder:text-gray-500 border border-gray-300 focus-visible:ring-[#088395]" placeholder="17:00" {...form.register("workEnd")} />
-                  </div>
-                  <div className="space-y-1.5 md:col-span-2">
-                    <Label className="text-gray-900">Bio (optional)</Label>
-                    <Input className="bg-white text-gray-900 placeholder:text-gray-500 border border-gray-300 focus-visible:ring-[#088395]" placeholder="Short description" {...form.register("bio")} />
-                  </div>
                   <div className="space-y-1.5">
                     <Label className="text-gray-900">Role</Label>
                     <Select onValueChange={(v) => form.setValue("role", v as any)}>
@@ -260,10 +234,10 @@ export default function UserManagement() {
                         <SelectValue placeholder="Select role" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="System Admin">System Admin</SelectItem>
-                        <SelectItem value="Office Admin">Office Admin</SelectItem>
-                        <SelectItem value="Office Staff">Office Staff</SelectItem>
-                        <SelectItem value="Customer">Customer</SelectItem>
+                        <SelectItem value="system-admin">System Admin</SelectItem>
+                        <SelectItem value="office-admin">Office Admin</SelectItem>
+                        <SelectItem value="staff">Office Staff</SelectItem>
+                        <SelectItem value="customer">Customer</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -330,7 +304,7 @@ export default function UserManagement() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge className={getRoleBadge(user.role)}>{user.role}</Badge>
+                      <Badge className={getRoleBadge(user.role)}>{getRoleDisplayName(user.role)}</Badge>
                     </TableCell>
                     <TableCell>{(user.officeId && officeNameById.get(user.officeId)) || '-'}</TableCell>
                     <TableCell>
@@ -447,11 +421,6 @@ export default function UserManagement() {
                     name: formData.get('name') || selectedUser.name,
                     role: formData.get('role') || selectedUser.role,
                     phone: formData.get('phone') || selectedUser.phone || null,
-                    address: formData.get('address') || selectedUser.address || null,
-                    department: formData.get('department') || selectedUser.department || null,
-                    position: formData.get('position') || selectedUser.position || null,
-                    workStart: formData.get('workStart') || selectedUser.workStart || null,
-                    workEnd: formData.get('workEnd') || selectedUser.workEnd || null,
                     officeId: formData.get('officeId') || selectedUser.officeId || null,
                   }
                   try {
@@ -484,10 +453,10 @@ export default function UserManagement() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="System Admin">System Admin</SelectItem>
-                        <SelectItem value="Office Admin">Office Admin</SelectItem>
-                        <SelectItem value="Office Staff">Office Staff</SelectItem>
-                        <SelectItem value="Customer">Customer</SelectItem>
+                        <SelectItem value="system-admin">System Admin</SelectItem>
+                        <SelectItem value="office-admin">Office Admin</SelectItem>
+                        <SelectItem value="staff">Office Staff</SelectItem>
+                        <SelectItem value="customer">Customer</SelectItem>
                       </SelectContent>
                     </Select>
                     <input type="hidden" name="role" defaultValue={selectedUser.role} id="roleHidden" />
@@ -495,26 +464,6 @@ export default function UserManagement() {
                   <div className="space-y-1.5">
                     <Label className="text-gray-900">Phone</Label>
                     <Input name="phone" defaultValue={selectedUser.phone || ''} className="bg-white text-gray-900 placeholder:text-gray-500 border border-gray-300 focus-visible:ring-[#088395]" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-gray-900">Address</Label>
-                    <Input name="address" defaultValue={selectedUser.address || ''} className="bg-white text-gray-900 placeholder:text-gray-500 border border-gray-300 focus-visible:ring-[#088395]" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-gray-900">Department</Label>
-                    <Input name="department" defaultValue={selectedUser.department || ''} className="bg-white text-gray-900 placeholder:text-gray-500 border border-gray-300 focus-visible:ring-[#088395]" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-gray-900">Position</Label>
-                    <Input name="position" defaultValue={selectedUser.position || ''} className="bg-white text-gray-900 placeholder:text-gray-500 border border-gray-300 focus-visible:ring-[#088395]" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-gray-900">Work start</Label>
-                    <Input name="workStart" defaultValue={selectedUser.workStart || ''} className="bg-white text-gray-900 placeholder:text-gray-500 border border-gray-300 focus-visible:ring-[#088395]" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-gray-900">Work end</Label>
-                    <Input name="workEnd" defaultValue={selectedUser.workEnd || ''} className="bg-white text-gray-900 placeholder:text-gray-500 border border-gray-300 focus-visible:ring-[#088395]" />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-gray-900">Assign office</Label>

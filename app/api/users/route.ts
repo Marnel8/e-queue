@@ -6,7 +6,6 @@ export async function GET() {
     const result = await getAllUsers();
     return NextResponse.json(result, { status: result.success ? 200 : 400 });
   } catch (error) {
-    console.error("API get users error:", error);
     return NextResponse.json({ success: false, message: "Internal server error" }, { status: 500 });
   }
 }
@@ -21,7 +20,6 @@ export async function PUT(request: NextRequest) {
     const result = await updateUserData(uid, updates as any);
     return NextResponse.json(result, { status: result.success ? 200 : 400 });
   } catch (error) {
-    console.error("API update user error:", error);
     return NextResponse.json({ success: false, message: "Internal server error" }, { status: 500 });
   }
 }
@@ -37,7 +35,6 @@ export async function DELETE(request: NextRequest) {
     const result = mode === "hard" ? await hardDeleteUser(uid) : await deactivateUser(uid);
     return NextResponse.json(result, { status: result.success ? 200 : 400 });
   } catch (error) {
-    console.error("API delete(deactivate) user error:", error);
     return NextResponse.json({ success: false, message: "Internal server error" }, { status: 500 });
   }
 }

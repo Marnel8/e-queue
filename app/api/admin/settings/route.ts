@@ -6,7 +6,6 @@ export async function GET() {
     const result = await getSystemSettings();
     return NextResponse.json(result, { status: result.success ? 200 : 400 });
   } catch (e) {
-    console.error("GET /admin/settings error", e);
     return NextResponse.json({ success: false, message: "Internal server error" }, { status: 500 });
   }
 }
@@ -17,7 +16,6 @@ export async function PUT(request: NextRequest) {
     const result = await updateSystemSettings(body ?? {});
     return NextResponse.json(result, { status: result.success ? 200 : 400 });
   } catch (e) {
-    console.error("PUT /admin/settings error", e);
     return NextResponse.json({ success: false, message: "Internal server error" }, { status: 500 });
   }
 }
@@ -31,7 +29,6 @@ export async function POST(request: NextRequest) {
     }
     return NextResponse.json({ success: false, message: "Unknown action" }, { status: 400 });
   } catch (e) {
-    console.error("POST /admin/settings error", e);
     return NextResponse.json({ success: false, message: "Internal server error" }, { status: 500 });
   }
 }

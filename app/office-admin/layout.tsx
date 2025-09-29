@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { OfficeAdminSidebar } from "@/components/office-admin/sidebar"
 import { Menu, Search, Bell } from "lucide-react"
 import { useSearchParams } from "next/navigation"
+import { AuthProvider } from "@/contexts/auth-context"
 
 function OfficeAdminLayoutContent({
   children,
@@ -105,8 +106,10 @@ export default function OfficeAdminLayout({
   children: React.ReactNode
 }) {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <OfficeAdminLayoutContent>{children}</OfficeAdminLayoutContent>
-    </Suspense>
+    <AuthProvider>
+      <Suspense fallback={<div>Loading...</div>}>
+        <OfficeAdminLayoutContent>{children}</OfficeAdminLayoutContent>
+      </Suspense>
+    </AuthProvider>
   )
 }

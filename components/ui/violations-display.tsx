@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { logUserAction } from "@/app/actions/activity-log";
 import {
 	Card,
 	CardContent,
@@ -41,16 +43,23 @@ import {
 } from "lucide-react";
 
 interface Violation {
-	id: number;
-	name: string;
-	email: string;
+	id: string;
+	userId: string;
+	userName: string;
+	userEmail: string;
 	violation: string;
-	date: string;
-	status: "active" | "resolved" | "pending";
-	severity: "high" | "medium" | "low";
-	type: "security" | "fraud" | "abuse" | "attendance" | "compliance";
 	details: string;
-	lastActivity: string;
+	type: "security" | "fraud" | "abuse" | "attendance" | "compliance";
+	severity: "high" | "medium" | "low";
+	status: "active" | "resolved" | "pending";
+	reportedBy: string;
+	reportedByName: string;
+	createdAt: string;
+	updatedAt: string;
+	resolvedAt?: string;
+	resolvedBy?: string;
+	resolvedByName?: string;
+	notes?: string;
 }
 
 interface ViolationsDisplayProps {
@@ -62,46 +71,69 @@ export function ViolationsDisplay({
 	userRole,
 	showActions = false,
 }: ViolationsDisplayProps) {
+	const { toast } = useToast();
 	const [searchTerm, setSearchTerm] = useState("");
 	const [statusFilter, setStatusFilter] = useState("all");
 	const [severityFilter, setSeverityFilter] = useState("all");
 	const [typeFilter, setTypeFilter] = useState("all");
 	const [violations, setViolations] = useState<Violation[]>([]);
 	const [mounted, setMounted] = useState(false);
+	const [loading, setLoading] = useState(true);
 
+	// Load violations from Firebase
 	useEffect(() => {
-		setMounted(true);
-		// Get violations from localStorage
-		if (typeof window !== "undefined") {
+		const loadViolations = async () => {
+			setLoading(true);
 			try {
-				const storedViolations = JSON.parse(
-					localStorage.getItem("equeue_violations") || "[]"
-				);
-				const dynamicRows = storedViolations.map((d: any) => ({
-					id: d.id,
-					name: "Unknown User",
-					email: d.email || "unknown@email.com",
-					violation: d.detail || d.type,
-					date: new Date(d.when).toISOString().split("T")[0],
-					status: "active" as const,
-					severity: d.type === "login_attempts_exceeded" ? "high" : "medium",
-					type:
-						d.type === "login_attempts_exceeded" ? "security" : "compliance",
-					details: d.detail,
-					lastActivity: new Date(d.when).toLocaleString(),
-				}));
-				setViolations(dynamicRows);
-			} catch {
+				const response = await fetch("/api/violations");
+				if (response.ok) {
+					const data = await response.json();
+					setViolations(data.violations || []);
+				} else {
+					// Fallback to localStorage for backward compatibility
+					if (typeof window !== "undefined") {
+						try {
+							const storedViolations = JSON.parse(
+								localStorage.getItem("equeue_violations") || "[]"
+							);
+							const dynamicRows = storedViolations.map((d: any) => ({
+								id: d.id,
+								userId: d.userId || "unknown",
+								userName: "Unknown User",
+								userEmail: d.email || "unknown@email.com",
+								violation: d.detail || d.type,
+								details: d.detail,
+								type: d.type === "login_attempts_exceeded" ? "security" : "compliance",
+								severity: d.type === "login_attempts_exceeded" ? "high" : "medium",
+								status: "active" as const,
+								reportedBy: "system",
+								reportedByName: "System",
+								createdAt: new Date(d.when).toISOString(),
+								updatedAt: new Date(d.when).toISOString(),
+							}));
+							setViolations(dynamicRows);
+						} catch {
+							setViolations([]);
+						}
+					}
+				}
+			} catch (error) {
+				console.error("Error loading violations:", error);
 				setViolations([]);
+			} finally {
+				setLoading(false);
+				setMounted(true);
 			}
-		}
+		};
+
+		loadViolations();
 	}, []);
 
 	// Filter violations based on filters
 	const filteredViolations = violations.filter((violation) => {
 		const matchesSearch =
-			violation.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-			violation.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+			violation.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+			violation.userEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
 			violation.violation.toLowerCase().includes(searchTerm.toLowerCase());
 		const matchesStatus =
 			statusFilter === "all" || violation.status === statusFilter;
@@ -147,17 +179,90 @@ export function ViolationsDisplay({
 		);
 	};
 
-	const handleResolveViolation = (id: number) => {
-		setViolations((prev) =>
-			prev.map((v) => (v.id === id ? { ...v, status: "resolved" as const } : v))
-		);
+	const handleResolveViolation = async (id: string) => {
+		try {
+			const response = await fetch(`/api/violations/${id}`, {
+				method: "PUT",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ 
+					status: "resolved",
+					resolvedBy: "current-user", // This should come from auth context
+					resolvedByName: "Current User"
+				}),
+			});
+
+			if (response.ok) {
+				// Log the activity
+				await logUserAction(
+					"current-user", // This should come from auth context
+					"Resolved violation",
+					"Violation Management",
+					"update"
+				);
+
+				// Update local state
+				setViolations((prev) =>
+					prev.map((v) => (v.id === id ? { ...v, status: "resolved" as const } : v))
+				);
+
+				toast({
+					title: "Violation resolved",
+					description: "The violation has been successfully resolved."
+				});
+			} else {
+				toast({
+					title: "Error",
+					description: "Failed to resolve violation.",
+					variant: "destructive"
+				});
+			}
+		} catch (error) {
+			toast({
+				title: "Error",
+				description: "Network error occurred.",
+				variant: "destructive"
+			});
+		}
 	};
 
-	const handleBanUser = (id: number) => {
-		setViolations((prev) =>
-			prev.map((v) => (v.id === id ? { ...v, status: "active" as const } : v))
-		);
+	const handleBanUser = async (id: string) => {
+		try {
+			// Log the activity
+			await logUserAction(
+				"current-user", // This should come from auth context
+				"Banned user due to violation",
+				"User Management",
+				"update"
+			);
+
+			toast({
+				title: "User banned",
+				description: "The user has been banned due to violation."
+			});
+		} catch (error) {
+			toast({
+				title: "Error",
+				description: "Failed to ban user.",
+				variant: "destructive"
+			});
+		}
 	};
+
+	if (loading) {
+		return (
+			<Card>
+				<CardHeader>
+					<CardTitle className="flex items-center gap-2">
+						<Clock className="w-5 h-5 text-blue-600" />
+						Loading Violations
+					</CardTitle>
+					<CardDescription>
+						Please wait while we load the violations data...
+					</CardDescription>
+				</CardHeader>
+			</Card>
+		);
+	}
 
 	if (violations.length === 0) {
 		return (
@@ -259,9 +364,9 @@ export function ViolationsDisplay({
 								<TableRow key={violation.id}>
 									<TableCell>
 										<div>
-											<div className="font-medium">{violation.name}</div>
+											<div className="font-medium">{violation.userName}</div>
 											<div className="text-sm text-gray-500">
-												{violation.email}
+												{violation.userEmail}
 											</div>
 										</div>
 									</TableCell>
@@ -275,7 +380,7 @@ export function ViolationsDisplay({
 									</TableCell>
 									<TableCell>
 										<div className="text-sm">
-											{mounted ? new Date(violation.date).toLocaleDateString() : violation.date}
+											{mounted ? new Date(violation.createdAt).toLocaleDateString() : violation.createdAt}
 										</div>
 									</TableCell>
 									<TableCell>

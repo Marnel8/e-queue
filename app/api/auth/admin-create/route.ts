@@ -27,7 +27,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(result, { status: result.success ? 201 : 400 });
   } catch (error) {
-    console.error("API admin-create error:", error);
     return NextResponse.json({ success: false, message: "Internal server error" }, { status: 500 });
   }
 }

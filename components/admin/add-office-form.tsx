@@ -92,7 +92,6 @@ export default function AddOfficeForm({ onOfficeAdded }: AddOfficeFormProps) {
         toast.error(result.message);
       }
     } catch (error) {
-      console.error("Add office error:", error);
       toast.error("An unexpected error occurred. Please try again.");
     } finally {
       setIsSubmitting(false);

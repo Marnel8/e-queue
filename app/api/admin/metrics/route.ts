@@ -6,7 +6,6 @@ export async function GET() {
     const result = await getAdminMetrics();
     return NextResponse.json(result, { status: result.success ? 200 : 400 });
   } catch (error) {
-    console.error("API admin metrics error:", error);
     return NextResponse.json({ success: false, message: "Internal server error" }, { status: 500 });
   }
 }
@@ -18,7 +17,6 @@ export async function POST(request: Request) {
     const result = await getReportsData(range ?? "7d");
     return NextResponse.json(result, { status: result.success ? 200 : 400 });
   } catch (error) {
-    console.error("API admin reports error:", error);
     return NextResponse.json({ success: false, message: "Internal server error" }, { status: 500 });
   }
 }

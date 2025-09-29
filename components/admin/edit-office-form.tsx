@@ -119,7 +119,6 @@ export default function EditOfficeForm({ office, onOfficeUpdated }: EditOfficeFo
         toast.error(result.message);
       }
     } catch (error) {
-      console.error("Update office error:", error);
       toast.error("An unexpected error occurred. Please try again.");
     } finally {
       setIsSubmitting(false);

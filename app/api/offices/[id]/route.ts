@@ -15,7 +15,6 @@ export async function GET(
       return NextResponse.json(result, { status: 404 });
     }
   } catch (error) {
-    console.error("API get office error:", error);
     return NextResponse.json(
       { success: false, message: "Internal server error" },
       { status: 500 }
@@ -38,7 +37,6 @@ export async function PUT(
       return NextResponse.json(result, { status: 400 });
     }
   } catch (error) {
-    console.error("API update office error:", error);
     return NextResponse.json(
       { success: false, message: "Internal server error" },
       { status: 500 }
@@ -60,7 +58,6 @@ export async function DELETE(
       return NextResponse.json(result, { status: 400 });
     }
   } catch (error) {
-    console.error("API delete office error:", error);
     return NextResponse.json(
       { success: false, message: "Internal server error" },
       { status: 500 }

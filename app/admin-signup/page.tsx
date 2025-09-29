@@ -89,7 +89,6 @@ export default function AdminSignUpPage() {
         toast.error(result.message);
       }
     } catch (error) {
-      console.error("Sign up error:", error);
       toast.error("An unexpected error occurred. Please try again.");
     } finally {
       setIsSubmitting(false);

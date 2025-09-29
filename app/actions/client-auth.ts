@@ -64,8 +64,6 @@ export async function signInClient(data: SignInData): Promise<AuthResult> {
       userData: userData,
     };
   } catch (error: any) {
-    console.error("Sign in error:", error);
-    
     let errorMessage = "An error occurred during sign in.";
     
     if (error.code === "auth/user-not-found") {
@@ -98,7 +96,6 @@ export async function changePasswordClient(currentPassword: string, newPassword:
 
     return { success: true, message: "Password updated successfully." };
   } catch (error: any) {
-    console.error("Change password error:", error);
     let errorMessage = "Failed to update password.";
     if (error.code === "auth/wrong-password") {
       errorMessage = "Current password is incorrect.";

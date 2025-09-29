@@ -46,7 +46,6 @@ export default function OfficeManagement() {
         toast.error("Failed to fetch offices");
       }
     } catch (error) {
-      console.error("Error fetching offices:", error);
       toast.error("An error occurred while fetching offices");
     } finally {
       setIsLoading(false);

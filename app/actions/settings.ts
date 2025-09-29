@@ -38,7 +38,6 @@ export async function getSystemSettings(): Promise<{ success: boolean; data?: Sy
     const data = snap.data() as SystemSettings;
     return { success: true, data };
   } catch (e) {
-    console.error("getSystemSettings error", e);
     return { success: false, message: "Failed to load settings" };
   }
 }
@@ -54,7 +53,6 @@ export async function updateSystemSettings(input: Partial<SystemSettings>): Prom
     await setDoc(SETTINGS_DOC, merged, { merge: true });
     return { success: true, message: "Settings saved", data: merged };
   } catch (e) {
-    console.error("updateSystemSettings error", e);
     return { success: false, message: "Failed to save settings" };
   }
 }
@@ -65,7 +63,6 @@ export async function resetSystemSettings(): Promise<{ success: boolean; message
     await setDoc(SETTINGS_DOC, data, { merge: true });
     return { success: true, message: "Settings reset to defaults", data };
   } catch (e) {
-    console.error("resetSystemSettings error", e);
     return { success: false, message: "Failed to reset settings" };
   }
 }

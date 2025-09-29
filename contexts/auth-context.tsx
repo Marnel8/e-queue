@@ -36,12 +36,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (result.success && result.userData) {
               setUserData(result.userData);
             } else {
-              console.error("Failed to fetch user data:", result.message);
               // Set user data to null but keep the user authenticated
               setUserData(null);
             }
           } catch (error) {
-            console.error("Error fetching user data:", error);
             setUserData(null);
           } finally {
             setIsFetchingUserData(false);
@@ -77,7 +75,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
       }
     } catch (error) {
-      console.error("Sign out error:", error);
       toast({
         title: "Error",
         description: "An error occurred during sign out.",

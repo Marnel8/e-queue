@@ -72,7 +72,6 @@ export async function addOffice(data: Omit<OfficeData, 'id' | 'createdAt' | 'upd
       office: office,
     };
   } catch (error: any) {
-    console.error("Add office error:", error);
     return {
       success: false,
       message: "An error occurred while adding the office.",
@@ -104,7 +103,6 @@ export async function getAllOffices(): Promise<OfficeResult> {
       message: "Offices retrieved successfully!",
     };
   } catch (error: any) {
-    console.error("Get all offices error:", error);
     return {
       success: false,
       message: "An error occurred while fetching offices.",
@@ -139,7 +137,6 @@ export async function getOfficeById(officeId: string): Promise<OfficeResult> {
       message: "Office retrieved successfully!",
     };
   } catch (error: any) {
-    console.error("Get office by ID error:", error);
     return {
       success: false,
       message: "An error occurred while fetching the office.",
@@ -172,7 +169,6 @@ export async function updateOffice(officeId: string, updates: Partial<OfficeData
       office: office,
     };
   } catch (error: any) {
-    console.error("Update office error:", error);
     return {
       success: false,
       message: "An error occurred while updating the office.",
@@ -191,7 +187,6 @@ export async function deleteOffice(officeId: string): Promise<OfficeResult> {
       message: "Office deleted successfully!",
     };
   } catch (error: any) {
-    console.error("Delete office error:", error);
     return {
       success: false,
       message: "An error occurred while deleting the office.",
@@ -223,7 +218,6 @@ export async function getOfficesByStatus(status: "Active" | "Inactive" | "Mainte
       message: `Offices with status '${status}' retrieved successfully!`,
     };
   } catch (error: any) {
-    console.error("Get offices by status error:", error);
     return {
       success: false,
       message: "An error occurred while fetching offices by status.",
@@ -245,7 +239,6 @@ export async function updateOfficeStatus(officeId: string, status: "Active" | "I
       message: `Office status updated to '${status}' successfully!`,
     };
   } catch (error: any) {
-    console.error("Update office status error:", error);
     return {
       success: false,
       message: "An error occurred while updating office status.",
@@ -277,7 +270,6 @@ export async function addOfficeService(officeId: string, serviceData: Omit<Offic
       } as OfficeService,
     };
   } catch (error: any) {
-    console.error("Add office service error:", error);
     return {
       success: false,
       message: "An error occurred while adding the service.",
@@ -306,7 +298,6 @@ export async function getOfficeServices(officeId: string): Promise<{ success: bo
       message: "Services retrieved successfully!",
     };
   } catch (error: any) {
-    console.error("Get office services error:", error);
     return {
       success: false,
       message: "An error occurred while fetching services.",
@@ -331,7 +322,6 @@ export async function updateOfficeService(serviceId: string, updates: Partial<Of
       message: "Service updated successfully!",
     };
   } catch (error: any) {
-    console.error("Update office service error:", error);
     return {
       success: false,
       message: "An error occurred while updating the service.",
@@ -350,7 +340,6 @@ export async function deleteOfficeService(serviceId: string): Promise<{ success:
       message: "Service deleted successfully!",
     };
   } catch (error: any) {
-    console.error("Delete office service error:", error);
     return {
       success: false,
       message: "An error occurred while deleting the service.",

@@ -15,7 +15,6 @@ export async function GET(
       return NextResponse.json(result, { status: 400 });
     }
   } catch (error) {
-    console.error("API get office services error:", error);
     return NextResponse.json(
       { success: false, message: "Internal server error" },
       { status: 500 }
@@ -52,7 +51,6 @@ export async function POST(
       return NextResponse.json(result, { status: 400 });
     }
   } catch (error) {
-    console.error("API add office service error:", error);
     return NextResponse.json(
       { success: false, message: "Internal server error" },
       { status: 500 }

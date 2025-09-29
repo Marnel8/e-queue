@@ -1,6 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useAuth } from "@/contexts/auth-context";
+import { useToast } from "@/hooks/use-toast";
+import { changePasswordClient } from "@/app/actions/client-auth";
+import { logUserAction } from "@/app/actions/activity-log";
 import {
 	Card,
 	CardContent,
@@ -22,61 +29,242 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { User, Mail, Phone, Shield, Key, Bell, Save } from "lucide-react";
+import { User, Mail, Phone, Shield, Key, Save } from "lucide-react";
+
+const ProfileSchema = z.object({
+	name: z.string().min(1, "Name is required"),
+	email: z.string().email("Invalid email address"),
+	phone: z.string().optional().or(z.literal("")),
+	address: z.string().optional().or(z.literal("")),
+	department: z.string().optional().or(z.literal("")),
+	position: z.string().optional().or(z.literal("")),
+	workStart: z.string().optional().or(z.literal("")),
+	workEnd: z.string().optional().or(z.literal("")),
+	bio: z.string().optional().or(z.literal("")),
+});
+
+const PasswordSchema = z
+	.object({
+		currentPassword: z.string().min(1, "Current password is required"),
+		newPassword: z.string().min(6, "Password must be at least 6 characters"),
+		confirmPassword: z.string().min(6, "Confirm your new password"),
+	})
+	.refine((data) => data.newPassword === data.confirmPassword, {
+		path: ["confirmPassword"],
+		message: "Passwords do not match",
+	});
+
+type ProfileForm = z.infer<typeof ProfileSchema>;
+type PasswordForm = z.infer<typeof PasswordSchema>;
 
 export default function ProfilePage() {
+	const { user, userData } = useAuth();
+	const { toast } = useToast();
 	const [activeTab, setActiveTab] = useState("profile");
 	const [mounted, setMounted] = useState(false);
+	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [isChangingPassword, setIsChangingPassword] = useState(false);
+	const [activityLog, setActivityLog] = useState<any[]>([]);
 
-	const profileData = {
-		name: "Maria Santos",
-		email: "maria.santos@omsc.edu.ph",
-		phone: "+63 912 345 6789",
-		position: "Office Administrator",
-		department: "Registrar Office",
-		employeeId: "EMP-2024-001",
-		dateJoined: "2023-06-15",
-		address: "Mamburao, Occidental Mindoro",
-		bio: "Experienced office administrator with over 5 years in student services and queue management systems.",
-		permissions: [
-			"Manage Staff",
-			"View Reports",
-			"Manage Services",
-			"Handle Feedback",
-			"Create Announcements",
-		],
+	const form = useForm<ProfileForm>({
+		resolver: zodResolver(ProfileSchema),
+		defaultValues: {
+			name: "",
+			email: "",
+			phone: "",
+			address: "",
+			department: "",
+			position: "",
+			workStart: "",
+			workEnd: "",
+			bio: "",
+		},
+	});
+
+	const passwordForm = useForm<PasswordForm>({
+		resolver: zodResolver(PasswordSchema),
+		defaultValues: {
+			currentPassword: "",
+			newPassword: "",
+			confirmPassword: "",
+		},
+	});
+
+	// Default permissions for office admin
+	const permissions = [
+		"Manage Staff",
+		"View Reports", 
+		"Manage Services",
+		"Handle Feedback",
+		"Create Announcements",
+	];
+
+	// Load user data into form when available
+	useEffect(() => {
+		if (!userData) return;
+		form.reset({
+			name: userData.name || "",
+			email: userData.email || "",
+			phone: (userData as any).phone || "",
+			address: (userData as any).address || "",
+			department: (userData as any).department || "",
+			position: (userData as any).position || "",
+			workStart: (userData as any).workStart || "",
+			workEnd: (userData as any).workEnd || "",
+			bio: (userData as any).bio || "",
+		});
+	}, [userData, form]);
+
+	// Load activity log from server
+	useEffect(() => {
+		const loadActivityLog = async () => {
+			if (!user?.uid) return;
+			try {
+				const response = await fetch(`/api/users/${user.uid}/activity`);
+				if (response.ok) {
+					const data = await response.json();
+					setActivityLog(data.activities || []);
+				}
+			} catch (error) {
+				// Fallback to mock data if API not available
+				setActivityLog([
+					{
+						id: 1,
+						action: "Updated service requirements",
+						service: "Transcript Request",
+						timestamp: "2024-01-20 14:30",
+						type: "update",
+					},
+					{
+						id: 2,
+						action: "Added new staff member",
+						service: "Staff Management",
+						timestamp: "2024-01-20 10:15",
+						type: "create",
+					},
+					{
+						id: 3,
+						action: "Published announcement",
+						service: "System Maintenance Notice",
+						timestamp: "2024-01-19 16:45",
+						type: "publish",
+					},
+					{
+						id: 4,
+						action: "Generated monthly report",
+						service: "Performance Analytics",
+						timestamp: "2024-01-19 09:20",
+						type: "report",
+					},
+				]);
+			}
+		};
+		loadActivityLog();
+	}, [user?.uid]);
+
+	const onSubmit = async (values: ProfileForm) => {
+		if (!user?.uid) return;
+		setIsSubmitting(true);
+		try {
+			const res = await fetch("/api/users", {
+				method: "PUT",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ 
+					uid: user.uid, 
+					updates: {
+						name: values.name,
+						email: values.email,
+						phone: values.phone || null,
+						address: values.address || null,
+						department: values.department || null,
+						position: values.position || null,
+						workStart: values.workStart || null,
+						workEnd: values.workEnd || null,
+						bio: values.bio || null,
+					} 
+				}),
+			});
+			const json = await res.json();
+			if (json?.success) {
+				// Log the activity
+				await logUserAction(
+					user.uid,
+					"Updated profile information",
+					"Profile Management",
+					"update"
+				);
+				
+				toast({ 
+					title: "Profile updated", 
+					description: "Your information has been saved." 
+				});
+				
+				// Refresh activity log
+				const response = await fetch(`/api/users/${user.uid}/activity`);
+				if (response.ok) {
+					const data = await response.json();
+					setActivityLog(data.activities || []);
+				}
+			} else {
+				toast({ 
+					title: "Update failed", 
+					description: json?.message ?? "Please try again.", 
+					variant: "destructive" 
+				});
+			}
+		} catch (e) {
+			toast({ 
+				title: "Update failed", 
+				description: "Network error.", 
+				variant: "destructive" 
+			});
+		} finally {
+			setIsSubmitting(false);
+		}
 	};
 
-	const activityLog = [
-		{
-			id: 1,
-			action: "Updated service requirements",
-			service: "Transcript Request",
-			timestamp: "2024-01-20 14:30",
-			type: "update",
-		},
-		{
-			id: 2,
-			action: "Added new staff member",
-			service: "Staff Management",
-			timestamp: "2024-01-20 10:15",
-			type: "create",
-		},
-		{
-			id: 3,
-			action: "Published announcement",
-			service: "System Maintenance Notice",
-			timestamp: "2024-01-19 16:45",
-			type: "publish",
-		},
-		{
-			id: 4,
-			action: "Generated monthly report",
-			service: "Performance Analytics",
-			timestamp: "2024-01-19 09:20",
-			type: "report",
-		},
-	];
+	const onChangePassword = async (values: PasswordForm) => {
+		setIsChangingPassword(true);
+		try {
+			const result = await changePasswordClient(values.currentPassword, values.newPassword);
+			if (result.success) {
+				// Log the activity
+				await logUserAction(
+					user!.uid,
+					"Changed account password",
+					"Security Management",
+					"update"
+				);
+				
+				toast({ 
+					title: "Password updated", 
+					description: "Your password has been changed." 
+				});
+				passwordForm.reset();
+				
+				// Refresh activity log
+				const response = await fetch(`/api/users/${user!.uid}/activity`);
+				if (response.ok) {
+					const data = await response.json();
+					setActivityLog(data.activities || []);
+				}
+			} else {
+				toast({ 
+					title: "Update failed", 
+					description: result.message, 
+					variant: "destructive" 
+				});
+			}
+		} catch (e) {
+			toast({ 
+				title: "Update failed", 
+				description: "Network error.", 
+				variant: "destructive" 
+			});
+		} finally {
+			setIsChangingPassword(false);
+		}
+	};
 
 	const getActivityIcon = (type: string) => {
 		switch (type) {
@@ -116,31 +304,34 @@ export default function ProfilePage() {
 						<Avatar className="w-20 h-20">
 							<AvatarImage src="/placeholder.svg?height=80&width=80" />
 							<AvatarFallback className="bg-[#088395] text-white text-xl">
-								MS
+								{userData?.name ? userData.name.split(' ').map(n => n[0]).join('').toUpperCase() : 'OA'}
 							</AvatarFallback>
 						</Avatar>
 						<div className="flex-1 space-y-2">
 							<div className="flex items-center gap-3">
 								<h2 className="text-xl font-semibold text-gray-900">
-									{profileData.name}
+									{userData?.name || 'Loading...'}
 								</h2>
 								<Badge className="bg-[#088395] text-white">
-									{profileData.position}
+									{(userData as any)?.position || 'Office Administrator'}
 								</Badge>
 							</div>
-							<p className="text-gray-600">{profileData.department}</p>
+							<p className="text-gray-600">{(userData as any)?.department || 'Department'}</p>
 							<div className="flex items-center gap-4 text-sm text-gray-500">
 								<div className="flex items-center gap-1">
 									<Mail className="w-4 h-4" />
-									{profileData.email}
+									{userData?.email || 'Loading...'}
 								</div>
 								<div className="flex items-center gap-1">
 									<Phone className="w-4 h-4" />
-									{profileData.phone}
+									{(userData as any)?.phone || 'Not provided'}
 								</div>
 							</div>
 						</div>
-						<Button className="gradient-primary">
+						<Button 
+							className="gradient-primary"
+							onClick={() => setActiveTab("profile")}
+						>
 							<User className="w-4 h-4 mr-2" />
 							Edit Profile
 						</Button>
@@ -165,15 +356,16 @@ export default function ProfilePage() {
 								<CardDescription>Update your personal details</CardDescription>
 							</CardHeader>
 							<CardContent className="space-y-4">
-								<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-									<div className="space-y-2">
-										<Label htmlFor="firstName">First Name</Label>
-										<Input id="firstName" defaultValue="Maria" />
-									</div>
-									<div className="space-y-2">
-										<Label htmlFor="lastName">Last Name</Label>
-										<Input id="lastName" defaultValue="Santos" />
-									</div>
+								<div className="space-y-2">
+									<Label htmlFor="name">Full Name</Label>
+									<Input 
+										id="name" 
+										placeholder="Enter your full name"
+										{...form.register("name")} 
+									/>
+									{form.formState.errors.name && (
+										<p className="text-sm text-red-600">{form.formState.errors.name.message}</p>
+									)}
 								</div>
 
 								<div className="space-y-2">
@@ -181,32 +373,58 @@ export default function ProfilePage() {
 									<Input
 										id="email"
 										type="email"
-										defaultValue={profileData.email}
+										disabled
+										{...form.register("email")}
 									/>
+									{form.formState.errors.email && (
+										<p className="text-sm text-red-600">{form.formState.errors.email.message}</p>
+									)}
 								</div>
 
 								<div className="space-y-2">
 									<Label htmlFor="phone">Phone Number</Label>
-									<Input id="phone" defaultValue={profileData.phone} />
+									<Input 
+										id="phone" 
+										placeholder="09xx xxx xxxx"
+										{...form.register("phone")} 
+									/>
+									{form.formState.errors.phone && (
+										<p className="text-sm text-red-600">{form.formState.errors.phone.message}</p>
+									)}
 								</div>
 
 								<div className="space-y-2">
 									<Label htmlFor="address">Address</Label>
-									<Input id="address" defaultValue={profileData.address} />
+									<Input 
+										id="address" 
+										placeholder="City, Province"
+										{...form.register("address")} 
+									/>
+									{form.formState.errors.address && (
+										<p className="text-sm text-red-600">{form.formState.errors.address.message}</p>
+									)}
 								</div>
 
 								<div className="space-y-2">
 									<Label htmlFor="bio">Bio</Label>
 									<Textarea
 										id="bio"
-										defaultValue={profileData.bio}
+										placeholder="Tell us about yourself"
 										className="min-h-20"
+										{...form.register("bio")}
 									/>
+									{form.formState.errors.bio && (
+										<p className="text-sm text-red-600">{form.formState.errors.bio.message}</p>
+									)}
 								</div>
 
-								<Button className="gradient-primary">
+								<Button 
+									className="gradient-primary"
+									onClick={form.handleSubmit(onSubmit)}
+									disabled={isSubmitting}
+								>
 									<Save className="w-4 h-4 mr-2" />
-									Save Changes
+									{isSubmitting ? "Saving..." : "Save Changes"}
 								</Button>
 							</CardContent>
 						</Card>
@@ -221,45 +439,43 @@ export default function ProfilePage() {
 									<Label htmlFor="employeeId">Employee ID</Label>
 									<Input
 										id="employeeId"
-										defaultValue={profileData.employeeId}
+										value={(userData as any)?.employeeId || 'Not assigned'}
 										disabled
 									/>
 								</div>
 
 								<div className="space-y-2">
 									<Label htmlFor="position">Position</Label>
-									<Input
-										id="position"
-										defaultValue={profileData.position}
-										disabled
+									<Input 
+										id="position" 
+										placeholder="Your position"
+										{...form.register("position")} 
 									/>
+									{form.formState.errors.position && (
+										<p className="text-sm text-red-600">{form.formState.errors.position.message}</p>
+									)}
 								</div>
 
 								<div className="space-y-2">
 									<Label htmlFor="department">Department</Label>
-									<Select defaultValue="registrar">
-										<SelectTrigger>
-											<SelectValue />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="registrar">
-												Registrar Office
-											</SelectItem>
-											<SelectItem value="cashier">Cashier Office</SelectItem>
-											<SelectItem value="library">Library</SelectItem>
-											<SelectItem value="guidance">Guidance Office</SelectItem>
-										</SelectContent>
-									</Select>
+									<Input 
+										id="department" 
+										placeholder="Your department"
+										{...form.register("department")} 
+									/>
+									{form.formState.errors.department && (
+										<p className="text-sm text-red-600">{form.formState.errors.department.message}</p>
+									)}
 								</div>
 
 								<div className="space-y-2">
 									<Label htmlFor="dateJoined">Date Joined</Label>
 									<Input
 										id="dateJoined"
-										defaultValue={
-											mounted
-												? new Date(profileData.dateJoined).toLocaleDateString()
-												: profileData.dateJoined
+										value={
+											mounted && (userData as any)?.createdAt
+												? new Date((userData as any).createdAt).toLocaleDateString()
+												: 'Not available'
 										}
 										disabled
 									/>
@@ -268,8 +484,16 @@ export default function ProfilePage() {
 								<div className="space-y-2">
 									<Label>Work Schedule</Label>
 									<div className="grid grid-cols-2 gap-2">
-										<Input defaultValue="8:00 AM" placeholder="Start Time" />
-										<Input defaultValue="5:00 PM" placeholder="End Time" />
+										<Input 
+											type="time"
+											placeholder="Start Time" 
+											{...form.register("workStart")} 
+										/>
+										<Input 
+											type="time"
+											placeholder="End Time" 
+											{...form.register("workEnd")} 
+										/>
 									</div>
 								</div>
 							</CardContent>
@@ -286,22 +510,50 @@ export default function ProfilePage() {
 						<CardContent className="space-y-4">
 							<div className="space-y-2">
 								<Label htmlFor="currentPassword">Current Password</Label>
-								<Input id="currentPassword" type="password" />
+								<Input 
+									id="currentPassword" 
+									type="password" 
+									placeholder="••••••••"
+									{...passwordForm.register("currentPassword")} 
+								/>
+								{passwordForm.formState.errors.currentPassword && (
+									<p className="text-sm text-red-600">{passwordForm.formState.errors.currentPassword.message}</p>
+								)}
 							</div>
 
 							<div className="space-y-2">
 								<Label htmlFor="newPassword">New Password</Label>
-								<Input id="newPassword" type="password" />
+								<Input 
+									id="newPassword" 
+									type="password" 
+									placeholder="At least 6 characters"
+									{...passwordForm.register("newPassword")} 
+								/>
+								{passwordForm.formState.errors.newPassword && (
+									<p className="text-sm text-red-600">{passwordForm.formState.errors.newPassword.message}</p>
+								)}
 							</div>
 
 							<div className="space-y-2">
 								<Label htmlFor="confirmPassword">Confirm New Password</Label>
-								<Input id="confirmPassword" type="password" />
+								<Input 
+									id="confirmPassword" 
+									type="password" 
+									placeholder="Repeat new password"
+									{...passwordForm.register("confirmPassword")} 
+								/>
+								{passwordForm.formState.errors.confirmPassword && (
+									<p className="text-sm text-red-600">{passwordForm.formState.errors.confirmPassword.message}</p>
+								)}
 							</div>
 
-							<Button className="gradient-primary">
+							<Button 
+								className="gradient-primary"
+								onClick={passwordForm.handleSubmit(onChangePassword)}
+								disabled={isChangingPassword}
+							>
 								<Key className="w-4 h-4 mr-2" />
-								Update Password
+								{isChangingPassword ? "Updating..." : "Update Password"}
 							</Button>
 						</CardContent>
 					</Card>
@@ -315,7 +567,7 @@ export default function ProfilePage() {
 						</CardHeader>
 						<CardContent>
 							<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-								{profileData.permissions.map((permission, index) => (
+								{permissions.map((permission, index) => (
 									<div
 										key={index}
 										className="flex items-center gap-3 p-3 border rounded-lg"
@@ -328,54 +580,6 @@ export default function ProfilePage() {
 						</CardContent>
 					</Card>
 
-					<Card>
-						<CardHeader>
-							<CardTitle>Notification Preferences</CardTitle>
-							<CardDescription>
-								Choose what notifications you want to receive
-							</CardDescription>
-						</CardHeader>
-						<CardContent className="space-y-4">
-							<div className="flex items-center justify-between p-3 border rounded-lg">
-								<div className="flex items-center gap-3">
-									<Bell className="w-5 h-5 text-gray-500" />
-									<div>
-										<p className="font-medium">Queue Updates</p>
-										<p className="text-sm text-gray-600">
-											Notifications about queue status
-										</p>
-									</div>
-								</div>
-								<input type="checkbox" defaultChecked className="rounded" />
-							</div>
-
-							<div className="flex items-center justify-between p-3 border rounded-lg">
-								<div className="flex items-center gap-3">
-									<Bell className="w-5 h-5 text-gray-500" />
-									<div>
-										<p className="font-medium">Staff Updates</p>
-										<p className="text-sm text-gray-600">
-											Notifications about staff changes
-										</p>
-									</div>
-								</div>
-								<input type="checkbox" defaultChecked className="rounded" />
-							</div>
-
-							<div className="flex items-center justify-between p-3 border rounded-lg">
-								<div className="flex items-center gap-3">
-									<Bell className="w-5 h-5 text-gray-500" />
-									<div>
-										<p className="font-medium">System Alerts</p>
-										<p className="text-sm text-gray-600">
-											Important system notifications
-										</p>
-									</div>
-								</div>
-								<input type="checkbox" defaultChecked className="rounded" />
-							</div>
-						</CardContent>
-					</Card>
 				</TabsContent>
 
 				<TabsContent value="activity" className="space-y-6">
@@ -388,29 +592,35 @@ export default function ProfilePage() {
 						</CardHeader>
 						<CardContent>
 							<div className="space-y-4">
-								{activityLog.map((activity) => (
-									<div
-										key={activity.id}
-										className="flex items-start gap-4 p-3 border rounded-lg"
-									>
-										<div className="text-2xl">
-											{getActivityIcon(activity.type)}
+								{activityLog.length > 0 ? (
+									activityLog.map((activity) => (
+										<div
+											key={activity.id}
+											className="flex items-start gap-4 p-3 border rounded-lg"
+										>
+											<div className="text-2xl">
+												{getActivityIcon(activity.type)}
+											</div>
+											<div className="flex-1">
+												<p className="font-medium text-gray-900">
+													{activity.action}
+												</p>
+												<p className="text-sm text-gray-600">
+													{activity.service}
+												</p>
+												<p className="text-xs text-gray-500 mt-1">
+													{mounted
+														? new Date(activity.timestamp).toLocaleString()
+														: activity.timestamp}
+												</p>
+											</div>
 										</div>
-										<div className="flex-1">
-											<p className="font-medium text-gray-900">
-												{activity.action}
-											</p>
-											<p className="text-sm text-gray-600">
-												{activity.service}
-											</p>
-											<p className="text-xs text-gray-500 mt-1">
-												{mounted
-													? new Date(activity.timestamp).toLocaleString()
-													: activity.timestamp}
-											</p>
-										</div>
+									))
+								) : (
+									<div className="text-center py-8 text-gray-500">
+										<p>No recent activity to display</p>
 									</div>
-								))}
+								)}
 							</div>
 						</CardContent>
 					</Card>

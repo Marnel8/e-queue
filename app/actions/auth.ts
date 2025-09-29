@@ -95,8 +95,6 @@ export async function signUpAdmin(data: SignUpData): Promise<AuthResult> {
       userData: userData,
     };
   } catch (error: any) {
-    console.error("Sign up error:", error);
-    
     let errorMessage = "An error occurred during sign up.";
     
     if (error.code === "auth/email-already-in-use") {
@@ -163,7 +161,6 @@ export async function adminCreateUser(data: AdminCreateUserData): Promise<AuthRe
       userData,
     };
   } catch (error: any) {
-    console.error("Admin create user error:", error);
     let errorMessage = "Failed to create user.";
     if (error.code === "auth/email-already-in-use") {
       errorMessage = "This email is already registered.";
@@ -223,8 +220,6 @@ export async function signIn(data: SignInData): Promise<AuthResult> {
       },
     };
   } catch (error: any) {
-    console.error("Sign in error:", error);
-    
     let errorMessage = "An error occurred during sign in.";
     
     if (error.code === "auth/user-not-found") {
@@ -252,7 +247,6 @@ export async function signOutUser(): Promise<AuthResult> {
       message: "Signed out successfully!",
     };
   } catch (error: any) {
-    console.error("Sign out error:", error);
     return {
       success: false,
       message: "An error occurred during sign out.",
@@ -279,7 +273,6 @@ export async function getUserData(uid: string): Promise<{ success: boolean; user
       userData: userData,
     };
   } catch (error: any) {
-    console.error("Get user data error:", error);
     return {
       success: false,
       message: "An error occurred while fetching user data.",
@@ -304,7 +297,6 @@ export async function getUsersByRole(role: string): Promise<{ success: boolean; 
       users: users,
     };
   } catch (error: any) {
-    console.error("Get users by role error:", error);
     return {
       success: false,
       message: "An error occurred while fetching users.",
@@ -323,7 +315,6 @@ export async function updateUserData(uid: string, updates: Partial<UserData>): P
       message: "User data updated successfully!",
     };
   } catch (error: any) {
-    console.error("Update user data error:", error);
     return {
       success: false,
       message: "An error occurred while updating user data.",
@@ -342,7 +333,6 @@ export async function deactivateUser(uid: string): Promise<{ success: boolean; m
       message: "User account deactivated successfully!",
     };
   } catch (error: any) {
-    console.error("Deactivate user error:", error);
     return {
       success: false,
       message: "An error occurred while deactivating user account.",
@@ -357,7 +347,6 @@ export async function hardDeleteUser(uid: string): Promise<{ success: boolean; m
     await deleteDoc(userRef);
     return { success: true, message: "User deleted permanently." };
   } catch (error: any) {
-    console.error("Hard delete user error:", error);
     return { success: false, message: "An error occurred while deleting user." };
   }
 }
@@ -381,7 +370,6 @@ export async function getAllUsers(): Promise<{ success: boolean; users?: any[]; 
       users: users,
     };
   } catch (error: any) {
-    console.error("Get all users error:", error);
     return {
       success: false,
       message: "An error occurred while fetching users.",
@@ -414,7 +402,6 @@ export async function getUserByEmail(email: string): Promise<{ success: boolean;
       user: userData,
     };
   } catch (error: any) {
-    console.error("Get user by email error:", error);
     return {
       success: false,
       message: "An error occurred while fetching user.",

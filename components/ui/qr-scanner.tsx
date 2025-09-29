@@ -111,7 +111,6 @@ export function QRScannerComponent({ onScanResult, isOpen, onClose }: QRScannerP
         });
       }
     } catch (err) {
-      console.error("QR Scanner error:", err);
       if (err instanceof Error && err.name === 'NotAllowedError') {
         setError("Camera access denied. Please allow camera permissions and try again.");
       } else if (err instanceof Error && err.name === 'NotFoundError') {
@@ -156,7 +155,6 @@ export function QRScannerComponent({ onScanResult, isOpen, onClose }: QRScannerP
         setIsFlipped(needsFlip);
       }
     } catch (err) {
-      console.error("Failed to switch camera:", err);
       setError("Failed to switch camera");
     }
   };

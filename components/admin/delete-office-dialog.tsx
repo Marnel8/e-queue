@@ -52,7 +52,6 @@ export default function DeleteOfficeDialog({ office, onOfficeDeleted }: DeleteOf
         toast.error(result.message);
       }
     } catch (error) {
-      console.error("Delete office error:", error);
       toast.error("An unexpected error occurred. Please try again.");
     } finally {
       setIsDeleting(false);

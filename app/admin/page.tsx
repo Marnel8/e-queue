@@ -60,13 +60,13 @@ export default function AdminDashboard() {
 				try {
 					json = text ? JSON.parse(text) : null;
 				} catch (e) {
-					console.error("Non-JSON response from /api/admin/metrics:", text);
+					// Non-JSON response handled
 				}
 				if (isMounted && json?.success) {
 					setMetrics(json.data);
 				}
 			} catch (e) {
-				console.error(e);
+				// Error handled by UI state
 			} finally {
 				if (isMounted) setIsLoading(false);
 			}

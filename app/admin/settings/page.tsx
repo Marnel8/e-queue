@@ -72,7 +72,7 @@ export default function SettingsPage() {
 					});
 				}
 			} catch (e) {
-				console.error(e);
+				// Error handled by UI state
 			} finally {
 				if (isMounted) setLoading(false);
 			}

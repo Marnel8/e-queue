@@ -20,6 +20,7 @@ import {
 	AlertTriangle,
 	FileText,
 } from "lucide-react";
+import { useAuth } from "@/contexts/auth-context";
 
 const navigation = [
 	{ name: "Dashboard", href: "/office-admin", icon: LayoutDashboard },
@@ -62,6 +63,11 @@ export function OfficeAdminSidebar({
 	mobile = false,
 }: SidebarProps) {
 	const pathname = usePathname();
+	const { user, userData, signOut } = useAuth();
+
+	const handleSignOut = async () => {
+		await signOut();
+	};
 
 	return (
 		<div
@@ -132,21 +138,33 @@ export function OfficeAdminSidebar({
 				{!collapsed && (
 					<div className="flex items-center gap-3 mb-3">
 						<div className="w-8 h-8 bg-[#088395] rounded-full flex items-center justify-center">
-							<Building2 className="w-4 h-4 text-white" />
+							<span className="text-sm font-semibold text-white">
+								{userData?.name ? userData.name.charAt(0).toUpperCase() : "U"}
+							</span>
 						</div>
 						<div className="flex-1 min-w-0">
 							<p className="text-sm font-medium text-gray-900 truncate">
-								Maria Santos
+								{userData?.name || "User"}
 							</p>
 							<p className="text-xs text-gray-500 truncate">
-								Office Administrator
+								{userData?.email || user?.email || "No email"}
 							</p>
+						</div>
+					</div>
+				)}
+				{collapsed && (
+					<div className="flex items-center justify-center mb-3">
+						<div className="w-8 h-8 bg-[#088395] rounded-full flex items-center justify-center">
+							<span className="text-sm font-semibold text-white">
+								{userData?.name ? userData.name.charAt(0).toUpperCase() : "U"}
+							</span>
 						</div>
 					</div>
 				)}
 				<Button
 					variant="ghost"
 					size="sm"
+					onClick={handleSignOut}
 					className={cn(
 						"w-full justify-start text-gray-600 hover:text-[#071952] hover:bg-gray-100",
 						collapsed && "justify-center px-2"

@@ -12,7 +12,6 @@ export async function GET() {
       return NextResponse.json(result, { status: 400 });
     }
   } catch (error) {
-    console.error("API get offices error:", error);
     return NextResponse.json(
       { success: false, message: "Internal server error" },
       { status: 500 }
@@ -50,7 +49,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(result, { status: 400 });
     }
   } catch (error) {
-    console.error("API add office error:", error);
     return NextResponse.json(
       { success: false, message: "Internal server error" },
       { status: 500 }
@@ -88,7 +86,6 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json(result, { status: 400 });
     }
   } catch (error) {
-    console.error("API update office error:", error);
     return NextResponse.json(
       { success: false, message: "Internal server error" },
       { status: 500 }
@@ -117,7 +114,6 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json(result, { status: 400 });
     }
   } catch (error) {
-    console.error("API delete office error:", error);
     return NextResponse.json(
       { success: false, message: "Internal server error" },
       { status: 500 }
