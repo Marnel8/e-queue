@@ -1,3 +1,5 @@
+"use client";
+
 import {
 	Card,
 	CardContent,
@@ -17,73 +19,142 @@ import {
 	TrendingUp,
 } from "lucide-react";
 import { ViolationsDisplay } from "@/components/ui/violations-display";
+import { useEffect, useMemo, useState } from "react";
+import { useAuth } from "@/contexts/auth-context";
+import { useToast } from "@/hooks/use-toast";
 
-const feedbackData = [
-	{
-		rating: 5,
-		count: 234,
-		percentage: 68,
-		color: "bg-green-500",
-	},
-	{
-		rating: 4,
-		count: 89,
-		percentage: 26,
-		color: "bg-green-400",
-	},
-	{
-		rating: 3,
-		count: 15,
-		percentage: 4,
-		color: "bg-yellow-500",
-	},
-	{
-		rating: 2,
-		count: 5,
-		percentage: 1,
-		color: "bg-orange-500",
-	},
-	{
-		rating: 1,
-		count: 2,
-		percentage: 1,
-		color: "bg-red-500",
-	},
-];
-
-const recentFeedback = [
-	{
-		id: 1,
-		customer: "Juan Dela Cruz",
-		service: "Transcript Request",
-		rating: 5,
-		comment:
-			"Very efficient service! The staff was helpful and the process was quick.",
-		date: "2024-01-15 10:30 AM",
-		sentiment: "positive",
-	},
-	{
-		id: 2,
-		customer: "Maria Garcia",
-		service: "Certificate Issuance",
-		rating: 4,
-		comment: "Good service overall, but the waiting time could be improved.",
-		date: "2024-01-15 09:45 AM",
-		sentiment: "positive",
-	},
-	{
-		id: 3,
-		customer: "Pedro Santos",
-		service: "Enrollment",
-		rating: 2,
-		comment:
-			"Long waiting time and confusing process. Staff needs better training.",
-		date: "2024-01-15 08:20 AM",
-		sentiment: "negative",
-	},
-];
+type DashboardFeedback = {
+	id: string;
+	customerName: string;
+	service: string;
+	rating: number;
+	comment: string;
+	createdAt?: string | null;
+	sentiment?: "positive" | "neutral" | "negative";
+};
 
 export default function OfficeAdminDashboard() {
+	const { userData } = useAuth();
+	const { toast } = useToast();
+	const [resolvedOffice, setResolvedOffice] = useState<string>("Registrar Office");
+	const [isLoading, setIsLoading] = useState<boolean>(false);
+	const [totalStaff, setTotalStaff] = useState<number>(0);
+	const [activeStaff, setActiveStaff] = useState<number>(0);
+	const [totalServices, setTotalServices] = useState<number>(0);
+	const [feedbackStats, setFeedbackStats] = useState<{
+		averageRating: number;
+		positivePercentage: number;
+		neutralPercentage: number;
+		negativePercentage: number;
+		total: number;
+	}>({ averageRating: 0, positivePercentage: 0, neutralPercentage: 0, negativePercentage: 0, total: 0 });
+	const [recentFeedback, setRecentFeedback] = useState<DashboardFeedback[]>([]);
+
+	useEffect(() => {
+		const candidateOrder = [(userData as any)?.officeName, (userData as any)?.office];
+		const next = candidateOrder.find((c) => typeof c === "string" && c.trim() !== "");
+		if (typeof next === "string" && next.trim() !== "" && next !== resolvedOffice) {
+			setResolvedOffice(next);
+		}
+	}, [userData, resolvedOffice]);
+
+	useEffect(() => {
+		const load = async () => {
+			const office = resolvedOffice;
+			if (!office || office.trim() === "") return;
+			setIsLoading(true);
+			try {
+				const [staffRes, servicesRes, fbStatsRes, fbListRes] = await Promise.all([
+					fetch(`/api/office-admin/staff?office=${encodeURIComponent(office)}`, { cache: "no-store" }),
+					fetch(`/api/office-admin/services?office=${encodeURIComponent(office)}`, { cache: "no-store" }),
+					fetch(`/api/feedback?officeId=${encodeURIComponent(office)}&stats=true`, { cache: "no-store" }),
+					fetch(`/api/feedback?officeId=${encodeURIComponent(office)}&limit=5`, { cache: "no-store" }),
+				]);
+
+				const [staffJson, servicesJson, fbStatsJson, fbListJson] = await Promise.all([
+					staffRes.json(),
+					servicesRes.json(),
+					fbStatsRes.json(),
+					fbListRes.json(),
+				]);
+
+				if (staffJson?.success && Array.isArray(staffJson.staff)) {
+					setTotalStaff(staffJson.staff.length);
+					setActiveStaff(
+						staffJson.staff.filter((s: any) => s.status === "Online").length
+					);
+				} else {
+					setTotalStaff(0);
+					setActiveStaff(0);
+				}
+
+				if (servicesJson?.success && Array.isArray(servicesJson.services)) {
+					setTotalServices(servicesJson.services.length);
+				} else {
+					setTotalServices(0);
+				}
+
+				if (fbStatsJson?.success && fbStatsJson.stats) {
+					setFeedbackStats({
+						averageRating: fbStatsJson.stats.averageRating ?? 0,
+						positivePercentage: fbStatsJson.stats.positivePercentage ?? 0,
+						neutralPercentage: fbStatsJson.stats.neutralPercentage ?? 0,
+						negativePercentage: fbStatsJson.stats.negativePercentage ?? 0,
+						total: fbStatsJson.stats.total ?? 0,
+					});
+				} else {
+					setFeedbackStats({ averageRating: 0, positivePercentage: 0, neutralPercentage: 0, negativePercentage: 0, total: 0 });
+				}
+
+				if (fbListJson?.success && Array.isArray(fbListJson.feedback)) {
+					setRecentFeedback(
+						fbListJson.feedback.map((f: any) => ({
+							id: f.id,
+							customerName: f.customerName ?? "Anonymous",
+							service: f.service ?? "",
+							rating: typeof f.rating === "number" ? f.rating : 0,
+							comment: f.comment ?? "",
+							createdAt: f.createdAt ?? null,
+							sentiment: f.sentiment,
+						}))
+					);
+				} else {
+					setRecentFeedback([]);
+				}
+			} catch (_e) {
+				toast({ title: "Failed to load dashboard", description: "Please try again.", variant: "destructive" });
+			} finally {
+				setIsLoading(false);
+			}
+		};
+
+		load();
+	}, [resolvedOffice, toast]);
+
+	const ratingBreakdown = useMemo(() => {
+		// Build counts from recent feedback if available; stats API does not return per-star counts
+		const counts: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+		for (const f of recentFeedback) {
+			if (typeof f.rating === "number" && f.rating >= 1 && f.rating <= 5) counts[f.rating as 1 | 2 | 3 | 4 | 5] += 1;
+		}
+		const total = Object.values(counts).reduce((a, b) => a + b, 0) || 1;
+		return [5, 4, 3, 2, 1].map((r) => ({
+			rating: r,
+			count: counts[r as 1 | 2 | 3 | 4 | 5],
+			percentage: Math.round((counts[r as 1 | 2 | 3 | 4 | 5] / total) * 100),
+			color:
+				r >= 4
+					? r === 5
+						? "bg-green-500"
+						: "bg-green-400"
+					: r === 3
+					? "bg-yellow-500"
+					: r === 2
+					? "bg-orange-500"
+					: "bg-red-500",
+		}));
+	}, [recentFeedback]);
+
 	return (
 		<div className="space-y-4 sm:space-y-6">
 			<div className="space-y-2">
@@ -91,7 +162,7 @@ export default function OfficeAdminDashboard() {
 					Dashboard
 				</h1>
 				<p className="text-sm sm:text-base text-muted-foreground">
-					Registrar Office overview and customer feedback analysis
+					{resolvedOffice} overview and customer feedback analysis
 				</p>
 			</div>
 
@@ -103,10 +174,8 @@ export default function OfficeAdminDashboard() {
 						<Users className="h-4 w-4 text-muted-foreground" />
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold">8</div>
-						<p className="text-xs text-muted-foreground">
-							<span className="text-green-600">+1</span> this month
-						</p>
+						<div className="text-2xl font-bold">{totalStaff}</div>
+						<p className="text-xs text-muted-foreground">Assigned to office</p>
 					</CardContent>
 				</Card>
 
@@ -116,8 +185,8 @@ export default function OfficeAdminDashboard() {
 						<Users className="h-4 w-4 text-muted-foreground" />
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold">6</div>
-						<p className="text-xs text-muted-foreground">2 on break</p>
+						<div className="text-2xl font-bold">{activeStaff}</div>
+						<p className="text-xs text-muted-foreground">Currently online</p>
 					</CardContent>
 				</Card>
 
@@ -129,10 +198,8 @@ export default function OfficeAdminDashboard() {
 						<TrendingUp className="h-4 w-4 text-muted-foreground" />
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold">94%</div>
-						<p className="text-xs text-muted-foreground">
-							<span className="text-green-600">+2%</span> this week
-						</p>
+						<div className="text-2xl font-bold">{feedbackStats.positivePercentage}%</div>
+						<p className="text-xs text-muted-foreground">Positive feedback</p>
 					</CardContent>
 				</Card>
 
@@ -144,8 +211,8 @@ export default function OfficeAdminDashboard() {
 						<Users className="h-4 w-4 text-muted-foreground" />
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold">12</div>
-						<p className="text-xs text-muted-foreground">Active services</p>
+						<div className="text-2xl font-bold">{totalServices}</div>
+						<p className="text-xs text-muted-foreground">Available services</p>
 					</CardContent>
 				</Card>
 			</div>
@@ -167,19 +234,15 @@ export default function OfficeAdminDashboard() {
 						<div className="text-center">
 							<div className="flex items-center justify-center gap-2 mb-2">
 								<Star className="w-6 h-6 sm:w-8 sm:h-8 fill-yellow-400 text-yellow-400" />
-								<span className="text-2xl sm:text-3xl font-bold">4.6</span>
-								<span className="text-sm sm:text-base text-muted-foreground">
-									/ 5.0
-								</span>
+								<span className="text-2xl sm:text-3xl font-bold">{feedbackStats.averageRating.toFixed(1)}</span>
+								<span className="text-sm sm:text-base text-muted-foreground">/ 5.0</span>
 							</div>
-							<p className="text-xs sm:text-sm text-muted-foreground">
-								Based on 345 reviews this month
-							</p>
+							<p className="text-xs sm:text-sm text-muted-foreground">Based on {feedbackStats.total} reviews</p>
 						</div>
 
 						{/* Rating Breakdown */}
 						<div className="space-y-2 sm:space-y-3">
-							{feedbackData.map((item) => (
+							{ratingBreakdown.map((item) => (
 								<div
 									key={item.rating}
 									className="flex items-center gap-2 sm:gap-3"
@@ -210,27 +273,21 @@ export default function OfficeAdminDashboard() {
 							<div className="text-center">
 								<div className="flex items-center justify-center gap-1 mb-1">
 									<ThumbsUp className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
-									<span className="text-sm sm:text-lg font-bold text-green-600">
-										89%
-									</span>
+									<span className="text-sm sm:text-lg font-bold text-green-600">{feedbackStats.positivePercentage}%</span>
 								</div>
 								<p className="text-xs text-muted-foreground">Positive</p>
 							</div>
 							<div className="text-center">
 								<div className="flex items-center justify-center gap-1 mb-1">
 									<MessageSquare className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
-									<span className="text-xs sm:text-lg font-bold text-gray-600">
-										8%
-									</span>
+									<span className="text-xs sm:text-lg font-bold text-gray-600">{feedbackStats.neutralPercentage}%</span>
 								</div>
 								<p className="text-xs text-muted-foreground">Neutral</p>
 							</div>
 							<div className="text-center">
 								<div className="flex items-center justify-center gap-1 mb-1">
 									<ThumbsDown className="w-3 h-3 sm:w-4 sm:h-4 text-red-600" />
-									<span className="text-sm sm:text-lg font-bold text-red-600">
-										3%
-									</span>
+									<span className="text-sm sm:text-lg font-bold text-red-600">{feedbackStats.negativePercentage}%</span>
 								</div>
 								<p className="text-xs text-muted-foreground">Negative</p>
 							</div>
@@ -257,9 +314,7 @@ export default function OfficeAdminDashboard() {
 								>
 									<div className="flex items-start justify-between gap-2">
 										<div className="flex items-center gap-2 min-w-0 flex-1">
-											<span className="font-medium text-xs sm:text-sm truncate">
-												{feedback.customer}
-											</span>
+										<span className="font-medium text-xs sm:text-sm truncate">{feedback.customerName}</span>
 											<Badge variant="outline" className="text-xs shrink-0">
 												{feedback.service}
 											</Badge>
@@ -281,9 +336,7 @@ export default function OfficeAdminDashboard() {
 										{feedback.comment}
 									</p>
 									<div className="flex items-center justify-between">
-										<span className="text-xs text-muted-foreground">
-											{feedback.date}
-										</span>
+										<span className="text-xs text-muted-foreground">{feedback.createdAt ? new Date(feedback.createdAt).toLocaleString() : ""}</span>
 										<Badge
 											variant={
 												feedback.sentiment === "positive"
@@ -292,7 +345,7 @@ export default function OfficeAdminDashboard() {
 											}
 											className="text-xs"
 										>
-											{feedback.sentiment}
+											{feedback.sentiment || ""}
 										</Badge>
 									</div>
 								</div>

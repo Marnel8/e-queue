@@ -1,0 +1,25 @@
+import { NextResponse } from "next/server";
+import { updateService, deleteService } from "@/app/actions/services";
+
+export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
+    try {
+        const { id } = await context.params;
+        const body = await request.json();
+        const result = await updateService(id, body);
+        return NextResponse.json(result, { status: result.success ? 200 : 400 });
+    } catch (e) {
+        return NextResponse.json({ success: false, message: "Invalid request" }, { status: 400 });
+    }
+}
+
+export async function DELETE(_request: Request, context: { params: Promise<{ id: string }> }) {
+    try {
+        const { id } = await context.params;
+        const result = await deleteService(id);
+        return NextResponse.json(result, { status: result.success ? 200 : 400 });
+    } catch (e) {
+        return NextResponse.json({ success: false, message: "Invalid request" }, { status: 400 });
+    }
+}
+
+

@@ -11,53 +11,75 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/auth-context";
 
-const entries = [
-	{
-		id: "A016",
-		customer: "Juan Dela Cruz",
-		department: "Registrar",
-		service: "Transcript Request",
-		time: "10:35 AM",
-		date: "2024-01-15",
-		evaluated: true,
-	},
-	{
-		id: "B045",
-		customer: "Maria Santos",
-		department: "Cashier",
-		service: "Tuition Payment",
-		time: "10:40 AM",
-		date: "2024-01-15",
-		evaluated: false,
-	},
-	{
-		id: "C023",
-		customer: "Pedro Garcia",
-		department: "Student Affairs",
-		service: "ID Replacement",
-		time: "11:15 AM",
-		date: "2024-01-14",
-		evaluated: true,
-	},
-	{
-		id: "D078",
-		customer: "Ana Rodriguez",
-		department: "Registrar",
-		service: "Enrollment",
-		time: "09:30 AM",
-		date: "2024-01-14",
-		evaluated: true,
-	},
-];
+type Entry = {
+    id: string;
+    customer: string;
+    department: string;
+    service: string;
+    time: string;
+    date: string;
+    evaluated: boolean;
+};
+
+const FilterSchema = z.object({
+    date: z.string().optional(),
+});
+type FilterForm = z.infer<typeof FilterSchema>;
 
 export default function LogbookPage() {
-	const [selectedDate, setSelectedDate] = useState("");
+    const { userData } = useAuth();
+    const { toast } = useToast();
+    const [entries, setEntries] = useState<Entry[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
 
-	const filteredEntries = selectedDate
-		? entries.filter((entry) => entry.date === selectedDate)
-		: entries;
+    const form = useForm<FilterForm>({
+        resolver: zodResolver(FilterSchema),
+        defaultValues: { date: "" },
+    });
+
+    const loadEntries = async (date?: string) => {
+        setIsLoading(true);
+        try {
+            const params = new URLSearchParams();
+            if ((userData as any)?.office) params.set("office", (userData as any).office);
+            if ((userData as any)?.officeId) params.set("officeId", (userData as any).officeId);
+            if ((userData as any)?.department) params.set("department", (userData as any).department);
+            if (date) params.set("date", date);
+            const res = await fetch(`/api/office-admin/logbook?${params.toString()}`, { cache: "no-store" });
+            const json = await res.json();
+            if (json?.success && Array.isArray(json.entries)) {
+                setEntries(json.entries);
+                toast({ title: "Loaded", description: "Logbook updated." });
+            } else {
+                setEntries([]);
+                toast({ title: "No data", description: json?.message ?? "No entries found.", variant: "destructive" });
+            }
+        } catch (e) {
+            setEntries([]);
+            toast({ title: "Error", description: "Failed to load logbook.", variant: "destructive" });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        // initial load once userData is available
+        if (userData) {
+            loadEntries();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [userData]);
+
+    const onSubmit = form.handleSubmit(async (values) => {
+        await loadEntries(values.date || undefined);
+    });
 
 	return (
 		<div className="space-y-6">
@@ -70,7 +92,9 @@ export default function LogbookPage() {
 						Printable queue history with evaluation status
 					</p>
 				</div>
-				<Button onClick={() => window.print()}>Print Logbook</Button>
+                <Button onClick={() => window.print()} disabled={isLoading}>
+                    {isLoading ? "Preparing..." : "Print Logbook"}
+                </Button>
 			</div>
 
 			<Card>
@@ -80,30 +104,37 @@ export default function LogbookPage() {
 				</CardHeader>
 				<CardContent>
 					<div className="space-y-4">
-						<div className="flex items-center space-x-4">
-							<div className="flex items-center space-x-2">
-								<Label htmlFor="date-filter">Filter by Date:</Label>
-								<Input
-									id="date-filter"
-									type="date"
-									value={selectedDate}
-									onChange={(e) => setSelectedDate(e.target.value)}
-									className="w-auto"
-								/>
-							</div>
-							{selectedDate && (
-								<Button
-									variant="outline"
-									onClick={() => setSelectedDate("")}
-									size="sm"
-								>
-									Clear Filter
-								</Button>
-							)}
-						</div>
+                        <form onSubmit={onSubmit} className="flex items-center space-x-4">
+                            <div className="flex items-center space-x-2">
+                                <Label htmlFor="date">Filter by Date:</Label>
+                                <Input
+                                    id="date"
+                                    type="date"
+                                    {...form.register("date")}
+                                    className="w-auto"
+                                />
+                            </div>
+                            <Button type="submit" size="sm" disabled={isLoading}>
+                                {isLoading ? "Loading..." : "Apply"}
+                            </Button>
+                            {(form.watch("date") || "") !== "" && (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => {
+                                        form.reset({ date: "" });
+                                        loadEntries();
+                                    }}
+                                    size="sm"
+                                    disabled={isLoading}
+                                >
+                                    Clear Filter
+                                </Button>
+                            )}
+                        </form>
 
 						<div className="space-y-3">
-							{filteredEntries.map((e) => (
+                            {entries.map((e) => (
 								<div
 									key={e.id}
 									className="flex items-center justify-between p-3 border rounded"
@@ -113,7 +144,7 @@ export default function LogbookPage() {
 											#{e.id} • {e.customer}
 										</div>
 										<div className="text-xs text-gray-600 truncate">
-											{e.department} • {e.service} • {e.date} • {e.time}
+                                            {e.department} • {e.service} • {e.date} • {e.time}
 										</div>
 									</div>
 									<Badge
@@ -129,7 +160,7 @@ export default function LogbookPage() {
 							))}
 						</div>
 
-						{filteredEntries.length === 0 && (
+                        {entries.length === 0 && (
 							<div className="text-center py-8 text-gray-500">
 								No transactions found for the selected date.
 							</div>

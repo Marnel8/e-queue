@@ -59,33 +59,6 @@ function OfficeAdminLayoutContent({
               <Menu className="w-4 h-4 text-gray-700" />
             </Button>
 
-            {/* Search */}
-            <div className="relative hidden sm:block">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
-              <Input type="text" placeholder="Search..." className="pl-10 w-64 bg-gray-50 border-gray-200" />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            {/* Notifications */}
-            <Button variant="outline" size="sm" className="relative border-gray-300 hover:bg-gray-50 bg-transparent">
-              <Bell className="w-4 h-4 text-gray-700" />
-              <Badge className="absolute -top-1 -right-1 w-5 h-5 p-0 flex items-center justify-center text-xs bg-red-500">
-                3
-              </Badge>
-            </Button>
-
-            {/* User Profile */}
-            <div className="flex items-center gap-3">
-              <div className="hidden sm:block text-right">
-                <p className="text-sm font-medium text-gray-900">Maria Santos</p>
-                <p className="text-xs text-gray-500">Office Administrator</p>
-              </div>
-              <Avatar className="w-8 h-8">
-                <AvatarImage src="/placeholder.svg?height=32&width=32" />
-                <AvatarFallback className="bg-[#088395] text-white">MS</AvatarFallback>
-              </Avatar>
-            </div>
           </div>
         </div>
       </header>

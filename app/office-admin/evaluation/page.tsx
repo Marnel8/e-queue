@@ -1,6 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useToast } from "@/hooks/use-toast";
 import {
 	Card,
 	CardContent,
@@ -37,6 +41,7 @@ import {
 	MessageSquare,
 	Edit,
 	Trash2,
+	Save,
 } from "lucide-react";
 import QRCode from "react-qr-code";
 
@@ -77,6 +82,7 @@ interface EvaluationResponse {
 }
 
 export default function EvaluationPage() {
+	const { toast } = useToast();
 	const [evaluationForms, setEvaluationForms] = useState<EvaluationForm[]>([]);
 	const [evaluationResponses, setEvaluationResponses] = useState<
 		EvaluationResponse[]
@@ -96,6 +102,15 @@ export default function EvaluationPage() {
 	const [activeTab, setActiveTab] = useState("forms");
 	const [selectedFormForAnalytics, setSelectedFormForAnalytics] =
 		useState<string>("all");
+	const [isSavingOfficial, setIsSavingOfficial] = useState(false);
+
+	const SaveOfficialSchema = z.object({});
+	type SaveOfficialForm = z.infer<typeof SaveOfficialSchema>;
+
+	const saveOfficialForm = useForm<SaveOfficialForm>({
+		resolver: zodResolver(SaveOfficialSchema),
+		defaultValues: {},
+	});
 
 	// Current office admin info (would come from auth context in real app)
 	const currentAdmin = {
@@ -273,101 +288,70 @@ export default function EvaluationPage() {
 		],
 	};
 
+const onSaveOfficial = async () => {
+		setIsSavingOfficial(true);
+		try {
+			const payload = {
+				title: officialCSMForm.title,
+				description: officialCSMForm.description,
+				office: currentAdmin.office,
+				services: ["All Services"],
+				questions: officialCSMForm.questions,
+				status: "active" as const,
+			};
+			const res = await fetch("/api/evaluations", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(payload),
+			});
+			const json = await res.json();
+			if (json?.success) {
+				toast({ title: "Saved", description: "Official CSM form saved to database." });
+				await loadEvaluationForms();
+			} else {
+				toast({ title: "Save failed", description: json?.message ?? "Please try again.", variant: "destructive" });
+			}
+		} catch (e) {
+			toast({ title: "Save failed", description: "Network error.", variant: "destructive" });
+		} finally {
+			setIsSavingOfficial(false);
+		}
+	};
+
 	useEffect(() => {
 		setMounted(true);
 		loadEvaluationForms();
 		loadEvaluationResponses();
 	}, []);
 
-	const loadEvaluationForms = () => {
-		// In a real app, this would fetch from an API
-		// Create the official CSM form by default
-		const defaultCSMForm: EvaluationForm = {
-			id: "eval-csm-default",
-			title: officialCSMForm.title,
-			description: officialCSMForm.description,
-			office: currentAdmin.office,
-			services: ["All Services"],
-			questions: officialCSMForm.questions,
-			createdAt: new Date().toISOString(),
-			status: "active",
-		};
-		setEvaluationForms([defaultCSMForm]);
+const loadEvaluationForms = async () => {
+		try {
+			const res = await fetch(`/api/evaluations?office=${encodeURIComponent(currentAdmin.office)}`, { cache: "no-store" });
+			const json = await res.json();
+			if (json?.success && Array.isArray(json.forms)) {
+				setEvaluationForms(
+					json.forms.map((f: any) => ({
+						id: f.id,
+						title: f.title,
+						description: f.description,
+						office: f.office,
+						services: f.services,
+						questions: f.questions,
+						createdAt: f.createdAt ?? new Date().toISOString(),
+						status: f.status,
+					}))
+				);
+			} else {
+				setEvaluationForms([]);
+			}
+		} catch (e) {
+			setEvaluationForms([]);
+		}
 	};
 
 	const loadEvaluationResponses = () => {
 		// In a real app, this would fetch from an API
-		// Add some sample responses for testing the delete warning
-		const sampleResponses: EvaluationResponse[] = [
-			{
-				id: "resp-1",
-				formId: "eval-csm-default",
-				customerName: "John Doe",
-				customerEmail: "john.doe@email.com",
-				service: "Transcript Request",
-				staffMember: "Maria Santos",
-				submittedAt: new Date(
-					Date.now() - 2 * 24 * 60 * 60 * 1000
-				).toISOString(),
-				responses: [
-					{
-						questionId: "sqd0",
-						question: "I am satisfied with the service that I availed.",
-						answer: 5,
-						type: "rating",
-					},
-					{
-						questionId: "sqd1",
-						question: "I spent a reasonable amount of time for my transaction.",
-						answer: 4,
-						type: "rating",
-					},
-					{
-						questionId: "client_type",
-						question: "Client Type",
-						answer: "Citizen",
-						type: "radio",
-					},
-				],
-				overallRating: 4.5,
-				comments: "Very efficient service. Staff was helpful and professional.",
-			},
-			{
-				id: "resp-2",
-				formId: "eval-csm-default",
-				customerName: "Jane Smith",
-				customerEmail: "jane.smith@email.com",
-				service: "Certificate Issuance",
-				staffMember: "Pedro Cruz",
-				submittedAt: new Date(
-					Date.now() - 1 * 24 * 60 * 60 * 1000
-				).toISOString(),
-				responses: [
-					{
-						questionId: "sqd0",
-						question: "I am satisfied with the service that I availed.",
-						answer: 3,
-						type: "rating",
-					},
-					{
-						questionId: "sqd1",
-						question: "I spent a reasonable amount of time for my transaction.",
-						answer: 2,
-						type: "rating",
-					},
-					{
-						questionId: "client_type",
-						question: "Client Type",
-						answer: "Business",
-						type: "radio",
-					},
-				],
-				overallRating: 2.5,
-				comments:
-					"The process took longer than expected, but the staff was courteous.",
-			},
-		];
-		setEvaluationResponses(sampleResponses);
+		setEvaluationResponses([]);
 	};
 
 
@@ -892,13 +876,21 @@ export default function EvaluationPage() {
 							Create evaluation forms and analyze customer feedback results
 						</p>
 					</div>
-					<Button
-						onClick={() => setShowCreateForm(true)}
-						className="gradient-primary text-white"
-					>
-						<Plus className="w-4 h-4 mr-2" />
-						Create New Form
-					</Button>
+					<div className="flex items-center gap-2">
+						{/* <form onSubmit={saveOfficialForm.handleSubmit(onSaveOfficial)}>
+							<Button type="submit" variant="outline" size="sm" disabled={isSavingOfficial}>
+								<Save className="w-4 h-4 mr-2" />
+								{isSavingOfficial ? "Saving..." : "Save Official CSM to DB"}
+							</Button>
+						</form> */}
+						<Button
+							onClick={() => setShowCreateForm(true)}
+							className="gradient-primary text-white"
+						>
+							<Plus className="w-4 h-4 mr-2" />
+							Create New Form
+						</Button>
+					</div>
 				</div>
 
 				{/* Tabs */}
