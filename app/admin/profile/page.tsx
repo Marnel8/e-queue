@@ -45,6 +45,7 @@ export default function AdminProfilePage() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   const form = useForm<ProfileForm>({
     resolver: zodResolver(ProfileSchema),
@@ -107,6 +108,7 @@ export default function AdminProfilePage() {
       const json = await res.json();
       if (json?.success) {
         toast({ title: "Profile updated", description: "Your information has been saved." });
+        setIsEditing(false);
       } else {
         toast({ title: "Update failed", description: json?.message ?? "Please try again.", variant: "destructive" });
       }
@@ -114,6 +116,28 @@ export default function AdminProfilePage() {
       toast({ title: "Update failed", description: "Network error.", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleEdit = () => {
+    setIsEditing(true);
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    // Reset form to original values
+    if (userData) {
+      form.reset({
+        name: userData.name || "",
+        email: userData.email || "",
+        phone: (userData as any).phone || "",
+        address: (userData as any).address || "",
+        department: (userData as any).department || "",
+        position: (userData as any).position || "",
+        workStart: (userData as any).workStart || "",
+        workEnd: (userData as any).workEnd || "",
+        bio: (userData as any).bio || "",
+      });
     }
   };
 
@@ -150,7 +174,7 @@ export default function AdminProfilePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
-              <Input id="name" placeholder="Juan Dela Cruz" {...form.register("name")} />
+              <Input id="name" placeholder="Juan Dela Cruz" disabled={!isEditing} {...form.register("name")} />
               {form.formState.errors.name && (
                 <p className="text-sm text-red-600">{form.formState.errors.name.message}</p>
               )}
@@ -166,44 +190,55 @@ export default function AdminProfilePage() {
 
             <div className="space-y-2">
               <Label htmlFor="phone">Phone</Label>
-              <Input id="phone" placeholder="09xx xxx xxxx" {...form.register("phone")} />
+              <Input id="phone" placeholder="09xx xxx xxxx" disabled={!isEditing} {...form.register("phone")} />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="address">Address</Label>
-              <Input id="address" placeholder="City, Province" {...form.register("address")} />
+              <Input id="address" placeholder="City, Province" disabled={!isEditing} {...form.register("address")} />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="department">Department</Label>
-              <Input id="department" placeholder="Department" {...form.register("department")} />
+              <Input id="department" placeholder="Department" disabled={!isEditing} {...form.register("department")} />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="position">Position</Label>
-              <Input id="position" placeholder="Position" {...form.register("position")} />
+              <Input id="position" placeholder="Position" disabled={!isEditing} {...form.register("position")} />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="workStart">Work Start</Label>
-              <Input id="workStart" type="time" {...form.register("workStart")} />
+              <Input id="workStart" type="time" disabled={!isEditing} {...form.register("workStart")} />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="workEnd">Work End</Label>
-              <Input id="workEnd" type="time" {...form.register("workEnd")} />
+              <Input id="workEnd" type="time" disabled={!isEditing} {...form.register("workEnd")} />
             </div>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="bio">Bio</Label>
-            <Textarea id="bio" rows={4} placeholder="Tell us about yourself" {...form.register("bio")} />
+            <Textarea id="bio" rows={4} placeholder="Tell us about yourself" disabled={!isEditing} {...form.register("bio")} />
           </div>
 
-          <div className="flex justify-end">
-            <Button onClick={form.handleSubmit(onSubmit)} disabled={isSubmitting} className="bg-primary hover:bg-primary/90">
-              {isSubmitting ? "Saving..." : "Save Changes"}
-            </Button>
+          <div className="flex justify-end gap-2">
+            {!isEditing ? (
+              <Button onClick={handleEdit} className="bg-primary hover:bg-primary/90">
+                Edit Profile
+              </Button>
+            ) : (
+              <>
+                <Button onClick={handleCancel} variant="outline" disabled={isSubmitting}>
+                  Cancel
+                </Button>
+                <Button onClick={form.handleSubmit(onSubmit)} disabled={isSubmitting} className="bg-primary hover:bg-primary/90">
+                  {isSubmitting ? "Saving..." : "Save Changes"}
+                </Button>
+              </>
+            )}
           </div>
         </CardContent>
       </Card>

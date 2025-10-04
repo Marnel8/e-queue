@@ -1,6 +1,6 @@
 "use client";
 
-import { signInWithEmailAndPassword, User, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
+import { signInWithEmailAndPassword, User, updatePassword, reauthenticateWithCredential, EmailAuthProvider, sendPasswordResetEmail } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/firebase/firebase";
 
@@ -106,6 +106,45 @@ export async function changePasswordClient(currentPassword: string, newPassword:
     } else if (error.message) {
       errorMessage = error.message;
     }
+    return { success: false, message: errorMessage };
+  }
+}
+
+export async function forgotPasswordClient(email: string): Promise<{ success: boolean; message: string }> {
+  try {
+    console.log("Attempting to send password reset email to:", email);
+    console.log("Firebase auth instance:", auth);
+    console.log("Auth current user:", auth.currentUser);
+    
+    await sendPasswordResetEmail(auth, email);
+    
+    console.log("Password reset email sent successfully");
+    
+    return { 
+      success: true, 
+      message: "Password reset email sent successfully. Please check your inbox and spam folder." 
+    };
+  } catch (error: any) {
+    console.error("Error sending password reset email:", error);
+    console.error("Error code:", error.code);
+    console.error("Error message:", error.message);
+    
+    let errorMessage = "Failed to send password reset email.";
+    
+    if (error.code === "auth/user-not-found") {
+      errorMessage = "No account found with this email address.";
+    } else if (error.code === "auth/invalid-email") {
+      errorMessage = "Invalid email address.";
+    } else if (error.code === "auth/too-many-requests") {
+      errorMessage = "Too many requests. Please try again later.";
+    } else if (error.code === "auth/invalid-action-code") {
+      errorMessage = "Invalid action code. Please try again.";
+    } else if (error.code === "auth/expired-action-code") {
+      errorMessage = "The action code has expired. Please try again.";
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
     return { success: false, message: errorMessage };
   }
 }

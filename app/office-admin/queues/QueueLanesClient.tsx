@@ -25,12 +25,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import {
-	Tabs,
-	TabsContent,
-	TabsList,
-	TabsTrigger,
-} from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/auth-context";
 import {
 	Plus,
@@ -65,7 +59,6 @@ const getStatusBadge = (status: string) => {
 
 export default function QueueLanesClient() {
 	const { toast } = useToast();
-	const [activeTab, setActiveTab] = useState("lanes");
 	const [lanes, setLanes] = useState<Lane[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [showAddModal, setShowAddModal] = useState(false);
@@ -353,13 +346,7 @@ export default function QueueLanesClient() {
 				</Button>
 			</div>
 
-			<Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-				<TabsList className="grid w-full grid-cols-1 sm:grid-cols-2">
-					<TabsTrigger value="lanes">Queue Lanes</TabsTrigger>
-					<TabsTrigger value="settings">Settings</TabsTrigger>
-				</TabsList>
-
-				<TabsContent value="lanes" className="space-y-4">
+			<div className="space-y-4">
 					<div className="text-xs sm:text-sm text-muted-foreground">
 						<span>Office: </span>
 						<span className="font-medium text-foreground">{resolvedOffice || "Registrar Office"}</span>
@@ -441,20 +428,7 @@ export default function QueueLanesClient() {
 							</div>
 						</CardContent>
 					</Card>
-				</TabsContent>
-
-				<TabsContent value="settings" className="space-y-4">
-					<Card>
-						<CardHeader>
-							<CardTitle>General Notes</CardTitle>
-							<CardDescription>Configure lane eligibility defaults</CardDescription>
-						</CardHeader>
-						<CardContent className="space-y-2 text-sm text-muted-foreground">
-							<p>Default lane type is <span className="font-medium text-foreground">All</span>. Priority lanes accept only priority customers. Regular lanes accept specific courses and year levels you set.</p>
-						</CardContent>
-					</Card>
-				</TabsContent>
-			</Tabs>
+			</div>
 
 			{/* Add Lane Modal */}
 			{showAddModal && (

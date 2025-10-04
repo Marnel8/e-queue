@@ -84,10 +84,13 @@ export default function SettingsPage() {
 
 	const onSubmit = async (values: SettingsForm) => {
 		try {
+			// Exclude immutable fields from submission
+			const { systemName, systemDescription, ...submittableValues } = values;
+			
 			const res = await fetch("/api/admin/settings", {
 				method: "PUT",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(values),
+				body: JSON.stringify(submittableValues),
 			});
 			const json = await res.json();
 			if (json?.success) {
@@ -179,7 +182,12 @@ export default function SettingsPage() {
 								<Input
 									id="systemName"
 									{...form.register("systemName")}
+									disabled
+									className="bg-gray-50 cursor-not-allowed"
 								/>
+								<p className="text-sm text-gray-500">
+									System name cannot be modified
+								</p>
 							</div>
 
 							<div className="space-y-2">
@@ -188,7 +196,12 @@ export default function SettingsPage() {
 									id="systemDescription"
 									rows={3}
 									{...form.register("systemDescription")}
+									disabled
+									className="bg-gray-50 cursor-not-allowed"
 								/>
+								<p className="text-sm text-gray-500">
+									System description cannot be modified
+								</p>
 							</div>
 
 							<div className="space-y-3">

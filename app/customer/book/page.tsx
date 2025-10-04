@@ -347,15 +347,44 @@ export default function BookTicket() {
 		if (step > 1) setStep(step - 1);
 	};
 
-	const handleSubmit = () => {
-		// TODO: Implement ticket issuance (same-day, single active ticket policy)
-		console.log("Issuing same-day ticket:", {
-			office: selectedOffice,
-			service: selectedService,
-			desk: selectedDesk,
-			credentialsConfirmed,
-		});
-		setIsSubmitted(true);
+	const handleSubmit = async () => {
+		try {
+			// Generate ticket number
+			const ticketNumber = `${selectedOffice?.toUpperCase().substring(0, 3)}${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
+			
+			// Create ticket via API
+			const response = await fetch('/api/tickets', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					ticketNumber,
+					customerName: formData.firstName + ' ' + formData.lastName,
+					customerEmail: formData.email,
+					customerPhone: formData.phone,
+					office: selectedOffice,
+					service: selectedService,
+					priority: formData.priority,
+					deskId: selectedDesk?.id || 1,
+					deskName: selectedDesk?.name || 'Desk 1',
+					customerType: 'walk-in',
+					walkInTime: new Date().toLocaleTimeString(),
+					priorityLaneImage: formData.priority === 'priority' ? formData.priorityLaneImage : undefined
+				})
+			});
+
+			const result = await response.json();
+			
+			if (result.success) {
+				console.log("Ticket created successfully:", result);
+				setIsSubmitted(true);
+			} else {
+				console.error("Failed to create ticket:", result.message);
+				alert("Failed to create ticket. Please try again.");
+			}
+		} catch (error) {
+			console.error("Error creating ticket:", error);
+			alert("Error creating ticket. Please try again.");
+		}
 	};
 
 	useEffect(() => {

@@ -154,10 +154,8 @@ export default function StaffDashboard() {
 	const deskQueueData = queueData.filter(
 		(ticket) => ticket.deskId === currentStaff.deskId
 	);
-	const [currentQueue, setCurrentQueue] = useState<any>(
-		deskQueueData[0] || null
-	);
-	const [queueList, setQueueList] = useState(deskQueueData.slice(1));
+	const [currentQueue, setCurrentQueue] = useState<any>(null);
+	const [queueList, setQueueList] = useState<any[]>([]);
 	const [archivedCustomers, setArchivedCustomers] = useState<any[]>([]);
 	const [evaluationScanned, setEvaluationScanned] = useState(false);
 	const [isMounted, setIsMounted] = useState(false);
@@ -165,6 +163,26 @@ export default function StaffDashboard() {
 	const [showImageModal, setShowImageModal] = useState(false);
 	const [selectedImage, setSelectedImage] = useState<string | null>(null);
 	const [mounted, setMounted] = useState(false);
+	const [processingStartTime, setProcessingStartTime] = useState<Date | null>(null);
+	const [tickets, setTickets] = useState<any[]>([]);
+
+	// Load tickets from API
+	const loadTickets = async () => {
+		try {
+			const res = await fetch(`/api/tickets?office=${encodeURIComponent(currentStaff.office)}&status=waiting`, { cache: "no-store" });
+			const json = await res.json();
+			if (json?.success && Array.isArray(json.tickets)) {
+				const waitingTickets = json.tickets.filter((ticket: any) => ticket.status === "waiting");
+				const currentTicket = json.tickets.find((ticket: any) => ticket.status === "current");
+				
+				setTickets(json.tickets);
+				setCurrentQueue(currentTicket || null);
+				setQueueList(waitingTickets);
+			}
+		} catch (e) {
+			console.error("Failed to load tickets:", e);
+		}
+	};
 
 	// Text-to-speech function to announce next customer
 	const announceNextCustomer = (
@@ -265,11 +283,16 @@ export default function StaffDashboard() {
 	useEffect(() => {
 		setIsMounted(true);
 		setMounted(true);
+		loadTickets();
 	}, []);
 
 	useEffect(() => {
 		// Reset evaluation scan status when customer changes
 		setEvaluationScanned(false);
+		// Start tracking processing time when a new customer becomes current
+		if (currentQueue) {
+			setProcessingStartTime(new Date());
+		}
 	}, [currentQueue?.id]);
 
 	// Check if current staff is still assigned to this queue
@@ -311,23 +334,67 @@ export default function StaffDashboard() {
 		});
 	};
 
-	const handleNext = () => {
-		// Archive current customer if exists
-		if (currentQueue) {
+	const handleNext = async () => {
+		// Complete current customer if exists
+		if (currentQueue && currentQueue.id) {
+			const endTime = new Date();
+			const processingTime = processingStartTime 
+				? Math.round((endTime.getTime() - processingStartTime.getTime()) / 1000 / 60) // in minutes
+				: null;
+			
+			// Update ticket status to completed
+			try {
+				await fetch(`/api/tickets/${currentQueue.id}`, {
+					method: 'PATCH',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						status: 'completed',
+						staffMember: currentStaff.name,
+						processingStartTime: processingStartTime?.toISOString(),
+						processingEndTime: endTime.toISOString(),
+						processingTimeMinutes: processingTime,
+						completionReason: 'completed'
+					})
+				});
+			} catch (e) {
+				console.error("Failed to update ticket status:", e);
+			}
+
+			// Archive for local display
 			const archivedCustomer = {
 				...currentQueue,
 				archivedAt: mounted ? new Date().toLocaleString() : "Loading...",
 				archivedBy: currentStaff.name,
 				archiveReason: "Service completed - moved to next customer",
 				status: "Archived",
+				processingStartTime: processingStartTime?.toISOString(),
+				processingEndTime: endTime.toISOString(),
+				processingTimeMinutes: processingTime,
 			};
 			setArchivedCustomers(prev => [archivedCustomer, ...prev]);
 		}
 
+		// Move to next customer
 		if (queueList.length > 0) {
 			const nextCustomer = queueList[0];
+			
+			// Update next customer to current status
+			try {
+				await fetch(`/api/tickets/${nextCustomer.id}`, {
+					method: 'PATCH',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						status: 'current',
+						staffMember: currentStaff.name
+					})
+				});
+			} catch (e) {
+				console.error("Failed to update next ticket status:", e);
+			}
+
 			setCurrentQueue(nextCustomer);
 			setQueueList(queueList.slice(1));
+			setProcessingStartTime(new Date()); // Start tracking processing time for next customer
 
 			// Announce next customer
 			announceNextCustomer(
@@ -336,7 +403,11 @@ export default function StaffDashboard() {
 			);
 		} else {
 			setCurrentQueue(null);
+			setProcessingStartTime(null);
 		}
+
+		// Reload tickets to get updated data
+		await loadTickets();
 	};
 
 	const handleHold = () => {
@@ -346,24 +417,67 @@ export default function StaffDashboard() {
 		}
 	};
 
-	const handleSkip = () => {
-		// Archive current customer if exists
-		if (currentQueue) {
+	const handleSkip = async () => {
+		// Skip current customer if exists
+		if (currentQueue && currentQueue.id) {
+			const endTime = new Date();
+			const processingTime = processingStartTime 
+				? Math.round((endTime.getTime() - processingStartTime.getTime()) / 1000 / 60) // in minutes
+				: null;
+			
+			// Update ticket status to skipped
+			try {
+				await fetch(`/api/tickets/${currentQueue.id}`, {
+					method: 'PATCH',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						status: 'skipped',
+						staffMember: currentStaff.name,
+						processingStartTime: processingStartTime?.toISOString(),
+						processingEndTime: endTime.toISOString(),
+						processingTimeMinutes: processingTime,
+						completionReason: 'skipped'
+					})
+				});
+			} catch (e) {
+				console.error("Failed to update ticket status:", e);
+			}
+
+			// Archive for local display
 			const archivedCustomer = {
 				...currentQueue,
 				archivedAt: mounted ? new Date().toLocaleString() : "Loading...",
 				archivedBy: currentStaff.name,
 				archiveReason: "Skipped by staff",
 				status: "Archived",
+				processingStartTime: processingStartTime?.toISOString(),
+				processingEndTime: endTime.toISOString(),
+				processingTimeMinutes: processingTime,
 			};
 			setArchivedCustomers(prev => [archivedCustomer, ...prev]);
 		}
 
-		// Skip current customer
+		// Move to next customer
 		if (queueList.length > 0) {
 			const nextCustomer = queueList[0];
+			
+			// Update next customer to current status
+			try {
+				await fetch(`/api/tickets/${nextCustomer.id}`, {
+					method: 'PATCH',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						status: 'current',
+						staffMember: currentStaff.name
+					})
+				});
+			} catch (e) {
+				console.error("Failed to update next ticket status:", e);
+			}
+
 			setCurrentQueue(nextCustomer);
 			setQueueList(queueList.slice(1));
+			setProcessingStartTime(new Date()); // Start tracking processing time for next customer
 
 			// Announce next customer after skipping
 			announceNextCustomer(
@@ -372,7 +486,11 @@ export default function StaffDashboard() {
 			);
 		} else {
 			setCurrentQueue(null);
+			setProcessingStartTime(null);
 		}
+
+		// Reload tickets to get updated data
+		await loadTickets();
 	};
 
 	const handleRestoreCustomer = (archivedCustomer: any) => {

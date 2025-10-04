@@ -153,10 +153,16 @@ export default function EditOfficeForm({ office, onOfficeUpdated }: EditOfficeFo
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Office Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., Registrar Office" {...field} />
-                  </FormControl>
+                  <div className="space-y-1.5 w-full">
+                    <FormLabel className="text-gray-900 text-sm">Office Name</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="e.g., Registrar Office" 
+                        className="w-full bg-white text-gray-900 placeholder:text-gray-500 border border-gray-300 focus-visible:ring-[#088395]"
+                        {...field} 
+                      />
+                    </FormControl>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
@@ -168,10 +174,16 @@ export default function EditOfficeForm({ office, onOfficeUpdated }: EditOfficeFo
               name="type"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Office Type</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., Academic, Administrative, Support" {...field} />
-                  </FormControl>
+                  <div className="space-y-1.5 w-full">
+                    <FormLabel className="text-gray-900 text-sm">Office Type</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="e.g., Academic, Administrative, Support" 
+                        className="w-full bg-white text-gray-900 placeholder:text-gray-500 border border-gray-300 focus-visible:ring-[#088395]"
+                        {...field} 
+                      />
+                    </FormControl>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
@@ -184,10 +196,16 @@ export default function EditOfficeForm({ office, onOfficeUpdated }: EditOfficeFo
                 name="location"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Location</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Building A, Room 101" {...field} />
-                    </FormControl>
+                    <div className="space-y-1.5 w-full">
+                      <FormLabel className="text-gray-900 text-sm">Location</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="e.g., Building A, Room 101" 
+                          className="w-full bg-white text-gray-900 placeholder:text-gray-500 border border-gray-300 focus-visible:ring-[#088395]"
+                          {...field} 
+                        />
+                      </FormControl>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -198,10 +216,16 @@ export default function EditOfficeForm({ office, onOfficeUpdated }: EditOfficeFo
                 name="focalPerson"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Focal Person / Head</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., John Doe" {...field} />
-                    </FormControl>
+                    <div className="space-y-1.5 w-full">
+                      <FormLabel className="text-gray-900 text-sm">Focal Person / Head</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="e.g., John Doe" 
+                          className="w-full bg-white text-gray-900 placeholder:text-gray-500 border border-gray-300 focus-visible:ring-[#088395]"
+                          {...field} 
+                        />
+                      </FormControl>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -215,14 +239,17 @@ export default function EditOfficeForm({ office, onOfficeUpdated }: EditOfficeFo
                 name="focalPersonEmail"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email (Optional)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="email" 
-                        placeholder="e.g., john.doe@university.edu" 
-                        {...field} 
-                      />
-                    </FormControl>
+                    <div className="space-y-1.5 w-full">
+                      <FormLabel className="text-gray-900 text-sm">Email (Optional)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="email" 
+                          placeholder="e.g., john.doe@university.edu" 
+                          className="w-full bg-white text-gray-900 placeholder:text-gray-500 border border-gray-300 focus-visible:ring-[#088395]"
+                          {...field} 
+                        />
+                      </FormControl>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -233,14 +260,17 @@ export default function EditOfficeForm({ office, onOfficeUpdated }: EditOfficeFo
                 name="focalPersonPhone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Phone (Optional)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="tel" 
-                        placeholder="e.g., +1 (555) 123-4567" 
-                        {...field} 
-                      />
-                    </FormControl>
+                    <div className="space-y-1.5 w-full">
+                      <FormLabel className="text-gray-900 text-sm">Phone (Optional)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="tel" 
+                          placeholder="e.g., +1 (555) 123-4567" 
+                          className="w-full bg-white text-gray-900 placeholder:text-gray-500 border border-gray-300 focus-visible:ring-[#088395]"
+                          {...field} 
+                        />
+                      </FormControl>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -253,19 +283,21 @@ export default function EditOfficeForm({ office, onOfficeUpdated }: EditOfficeFo
               name="status"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Status</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="Active">Active</SelectItem>
-                      <SelectItem value="Inactive">Inactive</SelectItem>
-                      <SelectItem value="Maintenance">Maintenance</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="space-y-1.5 w-full">
+                    <FormLabel className="text-gray-900 text-sm">Status</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="w-full bg-white text-gray-900 border border-gray-300 focus-visible:ring-[#088395]">
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Active">Active</SelectItem>
+                        <SelectItem value="Inactive">Inactive</SelectItem>
+                        <SelectItem value="Maintenance">Maintenance</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}

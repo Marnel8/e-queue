@@ -64,6 +64,7 @@ export default function ProfilePage() {
 	const [mounted, setMounted] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [isChangingPassword, setIsChangingPassword] = useState(false);
+	const [isEditing, setIsEditing] = useState(false);
 	const [activityLog, setActivityLog] = useState<any[]>([]);
 
 	const form = useForm<ProfileForm>({
@@ -90,14 +91,49 @@ export default function ProfilePage() {
 		},
 	});
 
-	// Default permissions for office admin
-	const permissions = [
-		"Manage Staff",
-		"View Reports", 
-		"Manage Services",
-		"Handle Feedback",
-		"Create Announcements",
-	];
+	// Role-based permission definitions (matching admin system)
+	const rolePermissions = {
+		"system-admin": [
+			"Manage Users",
+			"Manage Offices", 
+			"View System Reports",
+			"Manage System Settings",
+			"Manage Violations",
+			"Full System Access"
+		],
+		"office-admin": [
+			"Manage Staff",
+			"Manage Services", 
+			"Manage Queue Lanes",
+			"View Office Reports",
+			"Handle Feedback",
+			"Create Announcements",
+			"Manage Logbook",
+			"Manage Evaluations",
+			"Manage Violations"
+		],
+		"staff": [
+			"Manage Queue",
+			"Register Walk-ins",
+			"View Archives",
+			"Basic Operations"
+		],
+		"customer": [
+			"View Queue",
+			"Book Tickets", 
+			"Manage Tickets",
+			"Submit Feedback",
+			"View Violations"
+		]
+	};
+
+	// Get permissions for a specific role
+	const getPermissionsForRole = (role: string) => {
+		return rolePermissions[role as keyof typeof rolePermissions] || [];
+	};
+
+	// Get user's permissions based on their role
+	const permissions = userData?.role ? getPermissionsForRole(userData.role) : [];
 
 	// Load user data into form when available
 	useEffect(() => {
@@ -199,6 +235,8 @@ export default function ProfilePage() {
 					description: "Your information has been saved." 
 				});
 				
+				setIsEditing(false);
+				
 				// Refresh activity log
 				const response = await fetch(`/api/users/${user.uid}/activity`);
 				if (response.ok) {
@@ -220,6 +258,28 @@ export default function ProfilePage() {
 			});
 		} finally {
 			setIsSubmitting(false);
+		}
+	};
+
+	const handleEdit = () => {
+		setIsEditing(true);
+	};
+
+	const handleCancel = () => {
+		setIsEditing(false);
+		// Reset form to original values
+		if (userData) {
+			form.reset({
+				name: userData.name || "",
+				email: userData.email || "",
+				phone: (userData as any).phone || "",
+				address: (userData as any).address || "",
+				department: (userData as any).department || "",
+				position: (userData as any).position || "",
+				workStart: (userData as any).workStart || "",
+				workEnd: (userData as any).workEnd || "",
+				bio: (userData as any).bio || "",
+			});
 		}
 	};
 
@@ -281,6 +341,36 @@ export default function ProfilePage() {
 		}
 	};
 
+	// Get permission icon and description
+	const getPermissionInfo = (permission: string) => {
+		const permissionInfo: Record<string, { icon: string; description: string }> = {
+			"Manage Users": { icon: "👥", description: "Add, edit, and manage user accounts" },
+			"Manage Offices": { icon: "🏢", description: "Create and configure office locations" },
+			"View System Reports": { icon: "📊", description: "Access comprehensive system analytics" },
+			"Manage System Settings": { icon: "⚙️", description: "Configure global system parameters" },
+			"Manage Violations": { icon: "⚠️", description: "Handle and track policy violations" },
+			"Full System Access": { icon: "🔑", description: "Complete administrative control" },
+			"Manage Staff": { icon: "👨‍💼", description: "Add and manage staff members" },
+			"Manage Services": { icon: "🛠️", description: "Configure available services" },
+			"Manage Queue Lanes": { icon: "🚶‍♂️", description: "Set up and manage queue lanes" },
+			"View Office Reports": { icon: "📈", description: "Access office-specific analytics" },
+			"Handle Feedback": { icon: "💬", description: "Review and respond to feedback" },
+			"Create Announcements": { icon: "📢", description: "Publish office announcements" },
+			"Manage Logbook": { icon: "📝", description: "Maintain daily activity logs" },
+			"Manage Evaluations": { icon: "⭐", description: "Conduct staff evaluations" },
+			"Manage Queue": { icon: "🎫", description: "Process and manage queue tickets" },
+			"Register Walk-ins": { icon: "🚶‍♀️", description: "Register walk-in customers" },
+			"View Archives": { icon: "📁", description: "Access historical records" },
+			"Basic Operations": { icon: "🔧", description: "Essential operational tasks" },
+			"View Queue": { icon: "👀", description: "View current queue status" },
+			"Book Tickets": { icon: "🎫", description: "Book service appointments" },
+			"Manage Tickets": { icon: "🎫", description: "Manage your service tickets" },
+			"Submit Feedback": { icon: "💭", description: "Provide service feedback" },
+			"View Violations": { icon: "👁️", description: "View your violation records" }
+		};
+		return permissionInfo[permission] || { icon: "🔐", description: "System permission" };
+	};
+
 	useEffect(() => {
 		setMounted(true);
 	}, []);
@@ -333,7 +423,7 @@ export default function ProfilePage() {
 							onClick={() => setActiveTab("profile")}
 						>
 							<User className="w-4 h-4 mr-2" />
-							Edit Profile
+							View Profile
 						</Button>
 					</div>
 				</CardContent>
@@ -361,6 +451,7 @@ export default function ProfilePage() {
 									<Input 
 										id="name" 
 										placeholder="Enter your full name"
+										disabled={!isEditing}
 										{...form.register("name")} 
 									/>
 									{form.formState.errors.name && (
@@ -386,6 +477,7 @@ export default function ProfilePage() {
 									<Input 
 										id="phone" 
 										placeholder="09xx xxx xxxx"
+										disabled={!isEditing}
 										{...form.register("phone")} 
 									/>
 									{form.formState.errors.phone && (
@@ -398,6 +490,7 @@ export default function ProfilePage() {
 									<Input 
 										id="address" 
 										placeholder="City, Province"
+										disabled={!isEditing}
 										{...form.register("address")} 
 									/>
 									{form.formState.errors.address && (
@@ -411,6 +504,7 @@ export default function ProfilePage() {
 										id="bio"
 										placeholder="Tell us about yourself"
 										className="min-h-20"
+										disabled={!isEditing}
 										{...form.register("bio")}
 									/>
 									{form.formState.errors.bio && (
@@ -418,14 +512,35 @@ export default function ProfilePage() {
 									)}
 								</div>
 
-								<Button 
-									className="gradient-primary"
-									onClick={form.handleSubmit(onSubmit)}
-									disabled={isSubmitting}
-								>
-									<Save className="w-4 h-4 mr-2" />
-									{isSubmitting ? "Saving..." : "Save Changes"}
-								</Button>
+								<div className="flex justify-end gap-2">
+									{!isEditing ? (
+										<Button 
+											className="gradient-primary"
+											onClick={handleEdit}
+										>
+											<User className="w-4 h-4 mr-2" />
+											Edit Profile
+										</Button>
+									) : (
+										<>
+											<Button 
+												variant="outline"
+												onClick={handleCancel}
+												disabled={isSubmitting}
+											>
+												Cancel
+											</Button>
+											<Button 
+												className="gradient-primary"
+												onClick={form.handleSubmit(onSubmit)}
+												disabled={isSubmitting}
+											>
+												<Save className="w-4 h-4 mr-2" />
+												{isSubmitting ? "Saving..." : "Save Changes"}
+											</Button>
+										</>
+									)}
+								</div>
 							</CardContent>
 						</Card>
 
@@ -449,6 +564,7 @@ export default function ProfilePage() {
 									<Input 
 										id="position" 
 										placeholder="Your position"
+										disabled={!isEditing}
 										{...form.register("position")} 
 									/>
 									{form.formState.errors.position && (
@@ -461,6 +577,7 @@ export default function ProfilePage() {
 									<Input 
 										id="department" 
 										placeholder="Your department"
+										disabled={!isEditing}
 										{...form.register("department")} 
 									/>
 									{form.formState.errors.department && (
@@ -487,11 +604,13 @@ export default function ProfilePage() {
 										<Input 
 											type="time"
 											placeholder="Start Time" 
+											disabled={!isEditing}
 											{...form.register("workStart")} 
 										/>
 										<Input 
 											type="time"
 											placeholder="End Time" 
+											disabled={!isEditing}
 											{...form.register("workEnd")} 
 										/>
 									</div>
@@ -563,20 +682,38 @@ export default function ProfilePage() {
 					<Card>
 						<CardHeader>
 							<CardTitle>Access Permissions</CardTitle>
-							<CardDescription>Your current system permissions</CardDescription>
+							<CardDescription>
+								Your current system permissions based on your role: <strong>{(userData as any)?.role || 'office-admin'}</strong>
+							</CardDescription>
 						</CardHeader>
 						<CardContent>
-							<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-								{permissions.map((permission, index) => (
-									<div
-										key={index}
-										className="flex items-center gap-3 p-3 border rounded-lg"
-									>
-										<Shield className="w-5 h-5 text-[#088395]" />
-										<span className="font-medium">{permission}</span>
-									</div>
-								))}
-							</div>
+							{permissions.length > 0 ? (
+								<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+									{permissions.map((permission, index) => {
+										const permissionInfo = getPermissionInfo(permission);
+										return (
+											<div
+												key={index}
+												className="flex flex-col gap-2 p-4 border rounded-lg hover:shadow-md transition-shadow"
+											>
+												<div className="flex items-center gap-3">
+													<span className="text-2xl">{permissionInfo.icon}</span>
+													<span className="font-medium text-gray-900">{permission}</span>
+												</div>
+												<p className="text-sm text-gray-600 ml-11">
+													{permissionInfo.description}
+												</p>
+											</div>
+										);
+									})}
+								</div>
+							) : (
+								<div className="text-center py-8 text-gray-500">
+									<Shield className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+									<p>No permissions assigned</p>
+									<p className="text-sm">Contact your administrator for access</p>
+								</div>
+							)}
 						</CardContent>
 					</Card>
 

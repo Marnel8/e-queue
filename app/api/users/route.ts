@@ -29,10 +29,16 @@ export async function DELETE(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const uid = searchParams.get("id");
     const mode = searchParams.get("mode") || "deactivate";
+    const adminUserId = searchParams.get("adminUserId") || request.headers.get("x-admin-user-id");
+    
     if (!uid) {
       return NextResponse.json({ success: false, message: "User ID is required" }, { status: 400 });
     }
-    const result = mode === "hard" ? await hardDeleteUser(uid) : await deactivateUser(uid);
+    
+    const result = mode === "hard" 
+      ? await hardDeleteUser(uid, adminUserId || undefined) 
+      : await deactivateUser(uid, adminUserId || undefined);
+    
     return NextResponse.json(result, { status: result.success ? 200 : 400 });
   } catch (error) {
     return NextResponse.json({ success: false, message: "Internal server error" }, { status: 500 });

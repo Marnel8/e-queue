@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/firebase/firebase";
-import { collection, addDoc, serverTimestamp, getDocs, query, where, Timestamp } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, getDocs, query, where, Timestamp, deleteDoc, doc } from "firebase/firestore";
 
 export type EvaluationQuestion = {
   id: string;
@@ -63,6 +63,17 @@ export async function listEvaluationForms(office?: string): Promise<{ success: b
     return { success: true, forms };
   } catch (e) {
     return { success: false, message: "Failed to load evaluation forms" };
+  }
+}
+
+export async function deleteEvaluationForm(formId: string): Promise<{ success: boolean; message: string }> {
+  try {
+    const formRef = doc(db, "evaluation_forms", formId);
+    await deleteDoc(formRef);
+    return { success: true, message: "Evaluation form deleted successfully" };
+  } catch (e) {
+    console.error("Error deleting evaluation form:", e);
+    return { success: false, message: "Failed to delete evaluation form" };
   }
 }
 

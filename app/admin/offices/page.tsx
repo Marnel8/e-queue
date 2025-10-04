@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { Building2, Users, Clock, TrendingUp, MoreHorizontal, RefreshCw, Mail, Phone } from "lucide-react"
+import { Building2, Users, Clock, TrendingUp, RefreshCw, Mail, Phone } from "lucide-react"
 import AddOfficeForm from "@/components/admin/add-office-form"
 import EditOfficeForm from "@/components/admin/edit-office-form"
 import DeleteOfficeDialog from "@/components/admin/delete-office-dialog"
@@ -194,9 +194,6 @@ export default function OfficeManagement() {
                   >
                     {office.status}
                   </Badge>
-                  <Button variant="ghost" size="sm" className="hover:bg-gray-100 hover:text-gray-700">
-                    <MoreHorizontal className="w-4 h-4" />
-                  </Button>
                 </div>
               </div>
             </CardHeader>

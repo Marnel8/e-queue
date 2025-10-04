@@ -97,7 +97,6 @@ export default function ServiceManagementClient() {
 		name: z.string().min(2, "Service name is required"),
 		description: z.string().optional(),
 		requirementsText: z.string().optional(),
-		estimatedTime: z.string().optional(),
 		status: z.enum(["Active", "Inactive"]),
 	});
 	type ServiceForm = z.infer<typeof ServiceFormSchema>;
@@ -108,7 +107,6 @@ export default function ServiceManagementClient() {
 			name: "",
 			description: "",
 			requirementsText: "",
-			estimatedTime: "",
 			status: "Active",
 		},
 	});
@@ -116,7 +114,6 @@ export default function ServiceManagementClient() {
 	const EditServiceSchema = z.object({
 		name: z.string().min(2, "Service name is required"),
 		description: z.string().optional(),
-		estimatedTime: z.string().optional(),
 		status: z.enum(["Active", "Inactive"]),
 	});
 	type EditServiceForm = z.infer<typeof EditServiceSchema>;
@@ -126,7 +123,6 @@ export default function ServiceManagementClient() {
 		defaultValues: {
 			name: "",
 			description: "",
-			estimatedTime: "",
 			status: "Active",
 		},
 	});
@@ -152,38 +148,36 @@ export default function ServiceManagementClient() {
 	const totalServices = services.length;
 	const activeServices = services.filter((s) => s.status === "Active").length;
 	const totalRequestsToday = services.reduce((sum, s) => sum + (s.dailyRequests ?? 0), 0);
-	const avgProcessingMinutes = useMemo(() => {
-		const toMinutes = (value?: string) => {
-			if (!value || typeof value !== "string") return NaN;
-			const v = value.trim().toLowerCase();
-			// Pattern 1: range like "15-20 minutes"
-			const rangeMatch = v.match(/(\d+(?:\.\d+)?)\s*[-–]\s*(\d+(?:\.\d+)?)/);
-			if (rangeMatch) {
-				const a = parseFloat(rangeMatch[1]);
-				const b = parseFloat(rangeMatch[2]);
-				if (!isNaN(a) && !isNaN(b)) return (a + b) / 2;
-			}
-			// Pattern 2: number with optional 'm' or 'min'
-			const singleMatch = v.match(/(\d+(?:\.\d+)?)/);
-			if (singleMatch) {
-				const n = parseFloat(singleMatch[1]);
-				if (!isNaN(n)) return n; // assume minutes
-			}
-			return NaN;
-		};
+	const [realProcessingTimes, setRealProcessingTimes] = useState<any[]>([]);
+	const [overallStats, setOverallStats] = useState<any>(null);
 
-		// Prefer explicit avgWaitTime if parsable; else fall back to estimatedTime
-		const minutes: number[] = [];
-		for (const s of services) {
-			const fromAvg = toMinutes(s.avgWaitTime);
-			const fromEstimated = toMinutes(s.estimatedTime);
-			const val = !isNaN(fromAvg) ? fromAvg : fromEstimated;
-			if (!isNaN(val)) minutes.push(val);
+	// Fetch real processing times
+	const loadProcessingTimes = async () => {
+		try {
+			const res = await fetch(`/api/office-admin/services/processing-times?office=${encodeURIComponent(currentAdmin.office)}`, { cache: "no-store" });
+			const json = await res.json();
+			if (json?.success) {
+				setRealProcessingTimes(json.processingTimes || []);
+				setOverallStats(json.overallStats || null);
+			}
+		} catch (e) {
+			console.error("Failed to load processing times:", e);
 		}
-		if (minutes.length === 0) return "N/A";
-		const avg = minutes.reduce((a, b) => a + b, 0) / minutes.length;
-		return `${avg.toFixed(1)}m`;
-	}, [services]);
+	};
+
+	useEffect(() => {
+		loadProcessingTimes();
+	}, []);
+
+	const avgProcessingMinutes = useMemo(() => {
+		// Use real processing times if available
+		if (overallStats?.averageProcessingTimeMinutes) {
+			return `${overallStats.averageProcessingTimeMinutes}m`;
+		}
+
+		// No real data available yet
+		return "No data";
+	}, [overallStats]);
 
 	const loadServices = async () => {
 		try {
@@ -227,7 +221,6 @@ export default function ServiceManagementClient() {
 				name: values.name,
 				description: values.description ?? "",
 				requirements,
-				estimatedTime: values.estimatedTime ?? "",
 				status: values.status,
 				office: currentAdmin.office,
 			};
@@ -273,7 +266,6 @@ export default function ServiceManagementClient() {
 		editForm.reset({
 			name: service.name,
 			description: service.description ?? "",
-			estimatedTime: service.estimatedTime ?? "",
 			status: service.status,
 		});
 		setShowEditModal(true);
@@ -294,7 +286,6 @@ export default function ServiceManagementClient() {
 			const payload = {
 				name: values.name,
 				description: values.description ?? "",
-				estimatedTime: values.estimatedTime ?? "",
 				status: values.status,
 			};
 			const res = await fetch(`/api/office-admin/services/${editingService.id}`, {
@@ -426,7 +417,14 @@ export default function ServiceManagementClient() {
 					</CardHeader>
 					<CardContent>
 						<div className="text-2xl font-bold">{avgProcessingMinutes}</div>
-						<p className="text-xs text-muted-foreground">Average time</p>
+						<p className="text-xs text-muted-foreground">
+							{overallStats ? "Real processing data" : "No data yet"}
+						</p>
+						{overallStats && (
+							<p className="text-xs text-green-600 font-medium">
+								{overallStats.totalCompletions} completions
+							</p>
+						)}
 					</CardContent>
 				</Card>
 			</div>
@@ -450,8 +448,6 @@ export default function ServiceManagementClient() {
 									<TableHead className="min-w-32 hidden sm:table-cell">
 										Requirements
 									</TableHead>
-									<TableHead className="min-w-28">Processing Time</TableHead>
-									
 									<TableHead className="min-w-20">Status</TableHead>
 									<TableHead className="min-w-28 hidden md:table-cell">
 										Performance
@@ -495,10 +491,6 @@ export default function ServiceManagementClient() {
 												)}
 											</div>
 										</TableCell>
-										<TableCell className="text-xs">
-											{service.estimatedTime}
-										</TableCell>
-										
 										<TableCell>
 											<Badge className={getStatusBadge(service.status)}>
 												{service.status}
@@ -507,9 +499,20 @@ export default function ServiceManagementClient() {
 										<TableCell className="hidden md:table-cell">
 											<div className="text-xs">
 												<div>{service.dailyRequests ?? 0} requests today</div>
-												<div className="text-muted-foreground">
-													{service.avgWaitTime ?? "N/A"} avg wait
-												</div>
+												{(() => {
+													const realTimeData = realProcessingTimes.find(
+														pt => pt.serviceName === service.name
+													);
+													return realTimeData ? (
+														<div className="text-green-600 font-medium">
+															{realTimeData.avgProcessingTimeMinutes}m avg
+														</div>
+													) : (
+														<div className="text-orange-600 text-xs">
+															No data yet
+														</div>
+													);
+												})()}
 											</div>
 										</TableCell>
 										<TableCell className="text-right">
@@ -552,41 +555,72 @@ export default function ServiceManagementClient() {
 						Service Performance Today
 					</CardTitle>
 					<CardDescription className="text-xs sm:text-sm">
-						Real-time performance metrics for active services
+						Performance metrics based on actual staff processing times
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
 					<div className="space-y-3 sm:space-y-4">
 						{services
 							.filter((service) => service.status === "Active")
-							.map((service) => (
-								<div
-									key={service.id}
-									className="flex items-center justify-between p-3 sm:p-4 border rounded-lg"
-								>
-									<div className="flex items-center gap-3 min-w-0 flex-1">
-										<div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary/10 rounded-full flex items-center justify-center shrink-0">
-											<FileText className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+							.map((service) => {
+								// Find real processing time data for this service
+								const realTimeData = realProcessingTimes.find(
+									pt => pt.serviceName === service.name
+								);
+								
+								return (
+									<div
+										key={service.id}
+										className="flex items-center justify-between p-3 sm:p-4 border rounded-lg"
+									>
+										<div className="flex items-center gap-3 min-w-0 flex-1">
+											<div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary/10 rounded-full flex items-center justify-center shrink-0">
+												<FileText className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+											</div>
+											<div className="min-w-0">
+												<p className="font-medium text-sm sm:text-base truncate">
+													{service.name}
+												</p>
+												<div className="text-xs sm:text-sm text-muted-foreground">
+													{realTimeData ? (
+														<span className="text-green-600 font-medium">
+															Real processing time: {realTimeData.avgProcessingTimeMinutes}m
+														</span>
+													) : (
+														<span className="text-orange-600">
+															No processing data yet
+														</span>
+													)}
+												</div>
+											</div>
 										</div>
-										<div className="min-w-0">
-											<p className="font-medium text-sm sm:text-base truncate">
-												{service.name}
+										<div className="text-right shrink-0">
+											<p className="font-medium text-sm sm:text-base">
+												{service.dailyRequests ?? 0} requests
 											</p>
-											<p className="text-xs sm:text-sm text-muted-foreground">
-												{service.estimatedTime}
-											</p>
+											<div className="text-xs sm:text-sm text-muted-foreground">
+												{realTimeData ? (
+													<div>
+														<div className="text-green-600 font-medium">
+															{realTimeData.avgProcessingTimeMinutes}m avg
+														</div>
+														<div className="text-xs">
+															{realTimeData.totalCompletions} completed
+														</div>
+													</div>
+												) : (
+													<div>
+														<div>{service.avgWaitTime ?? "N/A"} avg wait</div>
+														<div className="text-xs text-orange-600">
+															No real data yet
+														</div>
+													</div>
+												)}
+											</div>
 										</div>
 									</div>
-									<div className="text-right shrink-0">
-										<p className="font-medium text-sm sm:text-base">
-											{service.dailyRequests ?? 0} requests
-										</p>
-										<p className="text-xs sm:text-sm text-muted-foreground">
-											{service.avgWaitTime ?? "N/A"} avg wait
-										</p>
-									</div>
-								</div>
-							))}
+								);
+							})}
 					</div>
 				</CardContent>
 			</Card>
@@ -622,24 +656,17 @@ export default function ServiceManagementClient() {
 									<Input id="requirementsText" {...form.register("requirementsText")} placeholder="Valid ID, Request Form, Payment Receipt" className="border border-gray-300 focus:ring-2 focus:ring-blue-500" />
 								</div>
 
-								<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-									<div>
-										<Label htmlFor="estimatedTime">Processing Time</Label>
-										<Input id="estimatedTime" {...form.register("estimatedTime")} placeholder="e.g., 15-20 minutes" className="border border-gray-300 focus:ring-2 focus:ring-blue-500" />
-									</div>
-									
-									<div>
-										<Label>Status</Label>
-										<Select value={form.watch("status")} onValueChange={(v) => form.setValue("status", v as any)}>
-										<SelectTrigger className="border border-gray-300 focus:ring-2 focus:ring-blue-500">
-												<SelectValue />
-											</SelectTrigger>
-											<SelectContent>
-												<SelectItem value="Active">Active</SelectItem>
-												<SelectItem value="Inactive">Inactive</SelectItem>
-											</SelectContent>
-										</Select>
-									</div>
+								<div>
+									<Label>Status</Label>
+									<Select value={form.watch("status")} onValueChange={(v) => form.setValue("status", v as any)}>
+									<SelectTrigger className="border border-gray-300 focus:ring-2 focus:ring-blue-500">
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="Active">Active</SelectItem>
+											<SelectItem value="Inactive">Inactive</SelectItem>
+										</SelectContent>
+									</Select>
 								</div>
 
 								<div className="flex gap-3 pt-2">
@@ -680,24 +707,17 @@ export default function ServiceManagementClient() {
 									<Label htmlFor="edit-description">Description</Label>
 									<Textarea id="edit-description" rows={3} {...editForm.register("description")} className="border border-gray-300 focus:ring-2 focus:ring-blue-500" />
 								</div>
-								<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-									<div>
-										<Label htmlFor="edit-estimatedTime">Processing Time</Label>
-										<Input id="edit-estimatedTime" {...editForm.register("estimatedTime")} className="border border-gray-300 focus:ring-2 focus:ring-blue-500" />
-									</div>
-									
-									<div>
-										<Label>Status</Label>
-										<Select value={editForm.watch("status")} onValueChange={(v) => editForm.setValue("status", v as any)}>
-										<SelectTrigger className="border border-gray-300 focus:ring-2 focus:ring-blue-500">
-												<SelectValue />
-											</SelectTrigger>
-											<SelectContent>
-												<SelectItem value="Active">Active</SelectItem>
-												<SelectItem value="Inactive">Inactive</SelectItem>
-											</SelectContent>
-										</Select>
-									</div>
+								<div>
+									<Label>Status</Label>
+									<Select value={editForm.watch("status")} onValueChange={(v) => editForm.setValue("status", v as any)}>
+									<SelectTrigger className="border border-gray-300 focus:ring-2 focus:ring-blue-500">
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="Active">Active</SelectItem>
+											<SelectItem value="Inactive">Inactive</SelectItem>
+										</SelectContent>
+									</Select>
 								</div>
 								<div className="flex gap-3 pt-2">
 									<Button type="submit" className="flex-1" disabled={isUpdating}>

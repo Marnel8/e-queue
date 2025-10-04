@@ -15,6 +15,7 @@ import {
   serverTimestamp,
   Timestamp 
 } from "firebase/firestore";
+import { logUserAction } from "./activity-log";
 
 export interface OfficeData {
   id?: string;
@@ -47,7 +48,7 @@ export interface OfficeResult {
 }
 
 // Add a new office
-export async function addOffice(data: Omit<OfficeData, 'id' | 'createdAt' | 'updatedAt'>): Promise<OfficeResult> {
+export async function addOffice(data: Omit<OfficeData, 'id' | 'createdAt' | 'updatedAt'>, userId?: string): Promise<OfficeResult> {
   try {
     const officesRef = collection(db, "offices");
     
@@ -65,6 +66,19 @@ export async function addOffice(data: Omit<OfficeData, 'id' | 'createdAt' | 'upd
       id: docRef.id,
       ...createdDoc.data(),
     } as OfficeData;
+
+    // Log activity
+    if (userId) {
+      await logUserAction(
+        userId,
+        `Created office: ${data.name}`,
+        "Office Management",
+        "create",
+        `Office: ${data.name} (${data.type}) at ${data.location}`,
+        "office",
+        docRef.id
+      );
+    }
 
     return {
       success: true,
@@ -145,7 +159,7 @@ export async function getOfficeById(officeId: string): Promise<OfficeResult> {
 }
 
 // Update office
-export async function updateOffice(officeId: string, updates: Partial<OfficeData>): Promise<OfficeResult> {
+export async function updateOffice(officeId: string, updates: Partial<OfficeData>, userId?: string): Promise<OfficeResult> {
   try {
     const officeRef = doc(db, "offices", officeId);
     
@@ -163,6 +177,20 @@ export async function updateOffice(officeId: string, updates: Partial<OfficeData
       ...updatedDoc.data(),
     } as OfficeData;
 
+    // Log activity
+    if (userId) {
+      const updatedFields = Object.keys(updates).join(", ");
+      await logUserAction(
+        userId,
+        `Updated office: ${office.name || officeId}`,
+        "Office Management",
+        "update",
+        `Updated fields: ${updatedFields}`,
+        "office",
+        officeId
+      );
+    }
+
     return {
       success: true,
       message: "Office updated successfully!",
@@ -177,10 +205,38 @@ export async function updateOffice(officeId: string, updates: Partial<OfficeData
 }
 
 // Delete office
-export async function deleteOffice(officeId: string): Promise<OfficeResult> {
+export async function deleteOffice(officeId: string, userId?: string): Promise<OfficeResult> {
   try {
+    // Get office data before deletion for logging
+    let officeName = officeId;
+    if (userId) {
+      try {
+        const officeRef = doc(db, "offices", officeId);
+        const officeDoc = await getDoc(officeRef);
+        if (officeDoc.exists()) {
+          const data = officeDoc.data() as any;
+          officeName = data.name || officeId;
+        }
+      } catch (e) {
+        // Continue with deletion even if we can't get the name
+      }
+    }
+
     const officeRef = doc(db, "offices", officeId);
     await deleteDoc(officeRef);
+
+    // Log activity
+    if (userId) {
+      await logUserAction(
+        userId,
+        `Deleted office: ${officeName}`,
+        "Office Management",
+        "delete",
+        `Office: ${officeName} (ID: ${officeId})`,
+        "office",
+        officeId
+      );
+    }
     
     return {
       success: true,
@@ -247,7 +303,7 @@ export async function updateOfficeStatus(officeId: string, status: "Active" | "I
 }
 
 // Add service to office
-export async function addOfficeService(officeId: string, serviceData: Omit<OfficeService, 'id' | 'officeId' | 'createdAt' | 'updatedAt'>): Promise<{ success: boolean; message: string; service?: OfficeService }> {
+export async function addOfficeService(officeId: string, serviceData: Omit<OfficeService, 'id' | 'officeId' | 'createdAt' | 'updatedAt'>, userId?: string): Promise<{ success: boolean; message: string; service?: OfficeService }> {
   try {
     const servicesRef = collection(db, "office_services");
     
@@ -259,6 +315,19 @@ export async function addOfficeService(officeId: string, serviceData: Omit<Offic
     };
 
     const docRef = await addDoc(servicesRef, service);
+    
+    // Log activity
+    if (userId) {
+      await logUserAction(
+        userId,
+        `Added service: ${serviceData.name}`,
+        "Service Management",
+        "create",
+        `Service: ${serviceData.name} for office ${officeId}`,
+        "service",
+        docRef.id
+      );
+    }
     
     return {
       success: true,
@@ -306,7 +375,7 @@ export async function getOfficeServices(officeId: string): Promise<{ success: bo
 }
 
 // Update office service
-export async function updateOfficeService(serviceId: string, updates: Partial<OfficeService>): Promise<{ success: boolean; message: string }> {
+export async function updateOfficeService(serviceId: string, updates: Partial<OfficeService>, userId?: string): Promise<{ success: boolean; message: string }> {
   try {
     const serviceRef = doc(db, "office_services", serviceId);
     
@@ -316,6 +385,20 @@ export async function updateOfficeService(serviceId: string, updates: Partial<Of
     };
 
     await updateDoc(serviceRef, updateData);
+    
+    // Log activity
+    if (userId) {
+      const updatedFields = Object.keys(updates).join(", ");
+      await logUserAction(
+        userId,
+        `Updated service: ${serviceId}`,
+        "Service Management",
+        "update",
+        `Updated fields: ${updatedFields}`,
+        "service",
+        serviceId
+      );
+    }
     
     return {
       success: true,
@@ -330,10 +413,38 @@ export async function updateOfficeService(serviceId: string, updates: Partial<Of
 }
 
 // Delete office service
-export async function deleteOfficeService(serviceId: string): Promise<{ success: boolean; message: string }> {
+export async function deleteOfficeService(serviceId: string, userId?: string): Promise<{ success: boolean; message: string }> {
   try {
+    // Get service data before deletion for logging
+    let serviceName = serviceId;
+    if (userId) {
+      try {
+        const serviceRef = doc(db, "office_services", serviceId);
+        const serviceDoc = await getDoc(serviceRef);
+        if (serviceDoc.exists()) {
+          const data = serviceDoc.data() as any;
+          serviceName = data.name || serviceId;
+        }
+      } catch (e) {
+        // Continue with deletion even if we can't get the name
+      }
+    }
+
     const serviceRef = doc(db, "office_services", serviceId);
     await deleteDoc(serviceRef);
+
+    // Log activity
+    if (userId) {
+      await logUserAction(
+        userId,
+        `Deleted service: ${serviceName}`,
+        "Service Management",
+        "delete",
+        `Service: ${serviceName} (ID: ${serviceId})`,
+        "service",
+        serviceId
+      );
+    }
     
     return {
       success: true,

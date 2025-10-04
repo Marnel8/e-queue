@@ -103,6 +103,7 @@ export default function EvaluationPage() {
 	const [selectedFormForAnalytics, setSelectedFormForAnalytics] =
 		useState<string>("all");
 	const [isSavingOfficial, setIsSavingOfficial] = useState(false);
+	const [isDeleting, setIsDeleting] = useState(false);
 
 	const SaveOfficialSchema = z.object({});
 	type SaveOfficialForm = z.infer<typeof SaveOfficialSchema>;
@@ -665,8 +666,124 @@ const loadEvaluationForms = async () => {
 	};
 
 	const downloadQR = (form: EvaluationForm) => {
-		// In a real app, this would generate and download a high-quality QR code
-		alert(`QR code for "${form.title}" would be downloaded as PDF/PNG`);
+		try {
+			// Get the QR code element
+			const qrElement = document.querySelector('.qr-code-container svg') as SVGElement;
+			if (!qrElement) {
+				toast({
+					title: "Error",
+					description: "QR code not found. Please try generating it again.",
+					variant: "destructive"
+				});
+				return;
+			}
+
+			// Method 1: Try direct SVG download first (simpler and more reliable)
+			const svgData = new XMLSerializer().serializeToString(qrElement);
+			const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+			const svgUrl = URL.createObjectURL(svgBlob);
+			
+			// Try to download as SVG first
+			const link = document.createElement('a');
+			link.href = svgUrl;
+			link.download = `qr-code-${form.title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.svg`;
+			link.style.display = 'none';
+			document.body.appendChild(link);
+			link.click();
+			document.body.removeChild(link);
+			URL.revokeObjectURL(svgUrl);
+
+			// Show success message
+			toast({
+				title: "Success",
+				description: "QR code downloaded successfully! (SVG format)"
+			});
+
+			// Also try to convert to PNG
+			setTimeout(() => {
+				downloadQRAsPNG(form, qrElement);
+			}, 100);
+
+		} catch (error) {
+			console.error('Error downloading QR code:', error);
+			toast({
+				title: "Error",
+				description: "An error occurred while downloading the QR code.",
+				variant: "destructive"
+			});
+		}
+	};
+
+	const downloadQRAsPNG = (form: EvaluationForm, qrElement: SVGElement) => {
+		try {
+			// Create a canvas element
+			const canvas = document.createElement('canvas');
+			const ctx = canvas.getContext('2d');
+			if (!ctx) {
+				return; // Fail silently for PNG conversion
+			}
+
+			// Set canvas size (higher resolution for better quality)
+			const size = 400;
+			canvas.width = size;
+			canvas.height = size;
+
+			// Create a new SVG element with the QR code
+			const svgData = new XMLSerializer().serializeToString(qrElement);
+			
+			// Add proper SVG namespace and styling
+			const svgWithStyle = svgData.replace(
+				'<svg',
+				'<svg xmlns="http://www.w3.org/2000/svg" style="background: white;"'
+			);
+			
+			const svgBlob = new Blob([svgWithStyle], { type: 'image/svg+xml;charset=utf-8' });
+			const svgUrl = URL.createObjectURL(svgBlob);
+
+			// Create an image element
+			const img = new Image();
+			img.crossOrigin = 'anonymous';
+			
+			img.onload = () => {
+				try {
+					// Draw white background
+					ctx.fillStyle = 'white';
+					ctx.fillRect(0, 0, canvas.width, canvas.height);
+					
+					// Draw the QR code image
+					ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+					// Convert canvas to PNG and download
+					canvas.toBlob((blob) => {
+						if (blob) {
+							const url = URL.createObjectURL(blob);
+							const link = document.createElement('a');
+							link.href = url;
+							link.download = `qr-code-${form.title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.png`;
+							link.style.display = 'none';
+							document.body.appendChild(link);
+							link.click();
+							document.body.removeChild(link);
+							URL.revokeObjectURL(url);
+						}
+					}, 'image/png', 1.0);
+
+					// Clean up
+					URL.revokeObjectURL(svgUrl);
+				} catch (drawError) {
+					console.error('Error drawing QR code:', drawError);
+					URL.revokeObjectURL(svgUrl);
+				}
+			};
+
+			img.onerror = () => {
+				URL.revokeObjectURL(svgUrl);
+			};
+
+			img.src = svgUrl;
+		} catch (error) {
+			console.error('Error converting QR code to PNG:', error);
+		}
 	};
 
 	const addQuestion = () => {
@@ -813,24 +930,51 @@ const loadEvaluationForms = async () => {
 		setShowDeleteModal(true);
 	};
 
-	const confirmDeleteForm = () => {
+	const confirmDeleteForm = async () => {
 		if (!formToDelete) return;
 
-		// Remove the form
-		setEvaluationForms(
-			evaluationForms.filter((form) => form.id !== formToDelete.id)
-		);
+		setIsDeleting(true);
+		try {
+			const res = await fetch(`/api/evaluations?id=${formToDelete.id}`, {
+				method: "DELETE",
+			});
+			const json = await res.json();
+			
+			if (json?.success) {
+				// Remove the form from local state
+				setEvaluationForms(
+					evaluationForms.filter((form) => form.id !== formToDelete.id)
+				);
 
-		// Also remove any responses for this form
-		setEvaluationResponses(
-			evaluationResponses.filter(
-				(response) => response.formId !== formToDelete.id
-			)
-		);
+				// Also remove any responses for this form
+				setEvaluationResponses(
+					evaluationResponses.filter(
+						(response) => response.formId !== formToDelete.id
+					)
+				);
 
-		setFormToDelete(null);
-		setShowDeleteModal(false);
-		alert("Evaluation form deleted successfully!");
+				toast({
+					title: "Success",
+					description: "Evaluation form deleted successfully!"
+				});
+			} else {
+				toast({
+					title: "Delete failed",
+					description: json?.message ?? "Please try again.",
+					variant: "destructive"
+				});
+			}
+		} catch (e) {
+			toast({
+				title: "Delete failed",
+				description: "Network error. Please try again.",
+				variant: "destructive"
+			});
+		} finally {
+			setIsDeleting(false);
+			setFormToDelete(null);
+			setShowDeleteModal(false);
+		}
 	};
 
 	const cancelDelete = () => {
@@ -1081,12 +1225,7 @@ const loadEvaluationForms = async () => {
 															variant="outline"
 															size="sm"
 															className="text-red-600 hover:text-red-700 hover:bg-red-50"
-															disabled={form.status === "active"}
-															title={
-																form.status === "active"
-																	? "Cannot delete active forms"
-																	: "Delete form"
-															}
+															title="Delete form"
 														>
 															<Trash2 className="w-4 h-4 mr-2" />
 															Delete
@@ -2189,7 +2328,7 @@ const loadEvaluationForms = async () => {
 									QR Code for "{selectedForm.title}"
 								</p>
 
-								<div className="bg-gray-50 p-6 rounded-lg">
+								<div className="bg-gray-50 p-6 rounded-lg qr-code-container">
 									<QRCode
 										value={JSON.stringify({
 											type: "evaluation_form",
@@ -2209,7 +2348,7 @@ const loadEvaluationForms = async () => {
 										className="flex-1"
 									>
 										<Download className="w-4 h-4 mr-2" />
-										Download QR
+										Download QR (SVG + PNG)
 									</Button>
 									<Button
 										onClick={() => setShowQRModal(false)}
@@ -2222,10 +2361,12 @@ const loadEvaluationForms = async () => {
 
 								<div className="text-xs text-gray-500 bg-gray-100 p-3 rounded">
 									<p>
-										<strong>Instructions:</strong> Print this QR code and place
-										it where customers can easily scan it after receiving
-										service. The QR code will direct them to the evaluation
-										form.
+										<strong>Instructions:</strong> Click "Download QR" to get both SVG and PNG formats. 
+										Print the QR code and place it where customers can easily scan it after receiving
+										service. The QR code will direct them to the evaluation form.
+									</p>
+									<p className="mt-2">
+										<strong>Formats:</strong> SVG (scalable vector) and PNG (raster image) will be downloaded automatically.
 									</p>
 								</div>
 							</div>
@@ -2247,6 +2388,24 @@ const loadEvaluationForms = async () => {
 								<p className="text-gray-600">
 									Are you sure you want to delete "{formToDelete.title}"?
 								</p>
+
+								{/* Check if form is active */}
+								{formToDelete.status === "active" && (
+									<div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+										<div className="flex items-start gap-3">
+											<AlertCircle className="w-5 h-5 text-orange-600 mt-0.5 flex-shrink-0" />
+											<div className="text-left">
+												<p className="text-sm font-medium text-orange-800">
+													Warning: This form is currently active
+												</p>
+												<p className="text-sm text-orange-700 mt-1">
+													Deleting an active form will immediately stop customers from being able to access it. 
+													Consider deactivating it first if you want to preserve the form for future use.
+												</p>
+											</div>
+										</div>
+									</div>
+								)}
 
 								{/* Check if form has responses */}
 								{(() => {
@@ -2280,14 +2439,25 @@ const loadEvaluationForms = async () => {
 									<Button
 										onClick={confirmDeleteForm}
 										className="flex-1 bg-red-600 hover:bg-red-700"
+										disabled={isDeleting}
 									>
-										<Trash2 className="w-4 h-4 mr-2" />
-										Delete Form
+										{isDeleting ? (
+											<>
+												<div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+												Deleting...
+											</>
+										) : (
+											<>
+												<Trash2 className="w-4 h-4 mr-2" />
+												Delete Form
+											</>
+										)}
 									</Button>
 									<Button
 										onClick={cancelDelete}
 										variant="outline"
 										className="flex-1"
+										disabled={isDeleting}
 									>
 										Cancel
 									</Button>

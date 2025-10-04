@@ -21,7 +21,41 @@ import {
 	CheckCircle,
 	BarChart3,
 	Settings,
+	Plus,
+	Edit,
+	Trash2,
+	Eye,
+	Upload,
+	FileText,
+	LogIn,
+	LogOut,
 } from "lucide-react";
+
+// Helper function to get icon for activity type
+const getActivityIcon = (title: string, level: string) => {
+	if (title.toLowerCase().includes("created") || title.toLowerCase().includes("new")) {
+		return <Plus className="w-4 h-4" />;
+	}
+	if (title.toLowerCase().includes("updated") || title.toLowerCase().includes("edited")) {
+		return <Edit className="w-4 h-4" />;
+	}
+	if (title.toLowerCase().includes("deleted") || title.toLowerCase().includes("removed")) {
+		return <Trash2 className="w-4 h-4" />;
+	}
+	if (title.toLowerCase().includes("published") || title.toLowerCase().includes("uploaded")) {
+		return <Upload className="w-4 h-4" />;
+	}
+	if (title.toLowerCase().includes("login")) {
+		return <LogIn className="w-4 h-4" />;
+	}
+	if (title.toLowerCase().includes("logout")) {
+		return <LogOut className="w-4 h-4" />;
+	}
+	if (title.toLowerCase().includes("report")) {
+		return <FileText className="w-4 h-4" />;
+	}
+	return <Eye className="w-4 h-4" />;
+};
 
 export default function AdminDashboard() {
 	const [isLoading, setIsLoading] = useState(true);
@@ -236,22 +270,53 @@ export default function AdminDashboard() {
 							Recent Activity
 						</CardTitle>
 						<CardDescription className="text-gray-500">
-							Latest system events and user actions
+							Recent CRUD operations and system events
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<div className="space-y-4">
+						<div className="space-y-3">
 							{(metrics?.recentActivity ?? []).map((item) => (
-								<div key={item.id} className="flex items-start gap-4 p-3 bg-gray-50 rounded-lg">
-									<div className={`w-2 h-2 ${item.level === "error" ? "bg-red-500" : item.level === "warning" ? "bg-amber-500" : item.level === "success" ? "bg-emerald-500" : "bg-[#088395]"} rounded-full mt-2 flex-shrink-0`}></div>
+								<div key={item.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+									<div className={`p-1.5 rounded-full flex-shrink-0 ${
+										item.level === "error" 
+											? "bg-red-100 text-red-600" 
+											: item.level === "warning" 
+											? "bg-amber-100 text-amber-600" 
+											: item.level === "success" 
+											? "bg-emerald-100 text-emerald-600" 
+											: "bg-[#088395]/10 text-[#088395]"
+									}`}>
+										{getActivityIcon(item.title, item.level)}
+									</div>
 									<div className="flex-1 min-w-0">
-										<p className="text-sm font-medium text-gray-900">{item.title}</p>
-										<p className="text-xs text-gray-500 mt-1">{item.description} - {new Date(item.timestamp).toLocaleString()}</p>
+										<div className="flex items-center gap-2 mb-1">
+											<p className="text-sm font-medium text-gray-900">{item.title}</p>
+											<Badge 
+												variant="outline" 
+												className={`text-xs ${
+													item.level === "error" 
+														? "border-red-200 text-red-700 bg-red-50" 
+														: item.level === "warning" 
+														? "border-amber-200 text-amber-700 bg-amber-50" 
+														: item.level === "success" 
+														? "border-emerald-200 text-emerald-700 bg-emerald-50" 
+														: "border-[#088395]/20 text-[#088395] bg-[#088395]/5"
+												}`}
+											>
+												{item.level}
+											</Badge>
+										</div>
+										<p className="text-xs text-gray-600 mb-1">{item.description}</p>
+										<p className="text-xs text-gray-400">{new Date(item.timestamp).toLocaleString()}</p>
 									</div>
 								</div>
 							))}
 							{(metrics?.recentActivity ?? []).length === 0 && (
-								<div className="text-sm text-gray-500">No recent activity.</div>
+								<div className="text-center py-8">
+									<Eye className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+									<div className="text-sm text-gray-500">No recent activity</div>
+									<div className="text-xs text-gray-400 mt-1">CRUD operations will appear here</div>
+								</div>
 							)}
 						</div>
 					</CardContent>

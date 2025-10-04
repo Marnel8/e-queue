@@ -9,6 +9,8 @@ export interface ActivityLogData {
   service: string;
   type: "create" | "update" | "delete" | "publish" | "report" | "login" | "logout";
   details?: string;
+  resourceType?: "user" | "office" | "service" | "staff" | "announcement" | "feedback" | "violation" | "queue" | "ticket";
+  resourceId?: string;
 }
 
 export async function logActivity(data: ActivityLogData): Promise<{ success: boolean; message: string }> {
@@ -39,13 +41,17 @@ export async function logUserAction(
   action: string, 
   service: string, 
   type: ActivityLogData["type"] = "update",
-  details?: string
+  details?: string,
+  resourceType?: ActivityLogData["resourceType"],
+  resourceId?: string
 ) {
   return logActivity({
     userId,
     action,
     service,
     type,
-    details
+    details,
+    resourceType,
+    resourceId
   });
 }

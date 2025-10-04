@@ -5,6 +5,17 @@ import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
 	LayoutDashboard,
 	Users,
 	Building2,
@@ -15,6 +26,7 @@ import {
 	ChevronRight,
 	Shield,
 	AlertTriangle,
+	Database,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 
@@ -23,7 +35,7 @@ const navigation = [
 	{ name: "User Management", href: "/admin/users", icon: Users },
 	{ name: "Office Management", href: "/admin/offices", icon: Building2 },
 	{ name: "Reports & Analytics", href: "/admin/reports", icon: BarChart3 },
-							
+	{ name: "Seed Test Data", href: "/admin/seed-data", icon: Database },
 	{ name: "System Settings", href: "/admin/settings", icon: Settings },
 	{ name: "Violations", href: "/admin/violations", icon: AlertTriangle },
 ];
@@ -134,18 +146,35 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
 						</div>
 					</div>
 				)}
-				<Button
-					variant="ghost"
-					size="sm"
-					onClick={handleSignOut}
-					className={cn(
-						"w-full justify-start text-muted-foreground hover:text-foreground",
-						collapsed && "justify-center px-2"
-					)}
-				>
-					<LogOut className="w-4 h-4" />
-					{!collapsed && <span className="ml-2">Logout</span>}
-				</Button>
+				<AlertDialog>
+					<AlertDialogTrigger asChild>
+						<Button
+							variant="ghost"
+							size="sm"
+							className={cn(
+								"w-full justify-start text-muted-foreground hover:text-foreground",
+								collapsed && "justify-center px-2"
+							)}
+						>
+							<LogOut className="w-4 h-4" />
+							{!collapsed && <span className="ml-2">Logout</span>}
+						</Button>
+					</AlertDialogTrigger>
+					<AlertDialogContent>
+						<AlertDialogHeader>
+							<AlertDialogTitle>Confirm Sign Out</AlertDialogTitle>
+							<AlertDialogDescription>
+								Are you sure you want to sign out? You will need to log in again to access the admin panel.
+							</AlertDialogDescription>
+						</AlertDialogHeader>
+						<AlertDialogFooter>
+							<AlertDialogCancel>Cancel</AlertDialogCancel>
+							<AlertDialogAction onClick={handleSignOut}>
+								Sign Out
+							</AlertDialogAction>
+						</AlertDialogFooter>
+					</AlertDialogContent>
+				</AlertDialog>
 			</div>
 
 			<Button

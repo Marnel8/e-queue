@@ -69,39 +69,99 @@ export async function getAdminMetrics(): Promise<{ success: boolean; data?: Admi
       notificationsStatus = "warning";
     }
 
-    // Recent activity from offices and users based on createdAt
+    // Recent activity from activity logs and basic system events
     const recent: AdminMetrics["recentActivity"] = [];
+    
+    // Fetch recent CRUD operations from activity logs
     try {
-      const latestOfficesQ = query(officesCol, orderBy("createdAt", "desc"), limit(5));
-      const latestOffices = await getDocs(latestOfficesQ);
-      latestOffices.forEach((d) => {
+      const activityLogsCol = collection(db, "activity_logs");
+      const recentActivityQ = query(activityLogsCol, orderBy("timestamp", "desc"), limit(10));
+      const recentActivitySnap = await getDocs(recentActivityQ);
+      
+      recentActivitySnap.forEach((d) => {
         const data: any = d.data();
+        const timestamp = data.timestamp?.toDate?.() || new Date(data.createdAt) || new Date();
+        
+        // Map activity log types to appropriate levels and titles
+        let level: "info" | "warning" | "error" | "success" = "info";
+        let title = data.action || "System Action";
+        
+        switch (data.type) {
+          case "create":
+            level = "success";
+            title = `Created ${data.resourceType || "resource"}`;
+            break;
+          case "update":
+            level = "info";
+            title = `Updated ${data.resourceType || "resource"}`;
+            break;
+          case "delete":
+            level = "warning";
+            title = `Deleted ${data.resourceType || "resource"}`;
+            break;
+          case "publish":
+            level = "success";
+            title = `Published ${data.resourceType || "content"}`;
+            break;
+          case "login":
+            level = "info";
+            title = "User Login";
+            break;
+          case "logout":
+            level = "info";
+            title = "User Logout";
+            break;
+          case "report":
+            level = "info";
+            title = "Report Generated";
+            break;
+        }
+        
         recent?.push({
-          id: `office-${d.id}`,
-          type: "office",
-          title: "New office registered",
-          description: data.name || "Office",
-          timestamp: (data.createdAt?.toDate?.() || new Date()).toISOString(),
-          level: "success",
+          id: `activity-${d.id}`,
+          type: data.resourceType === "office" ? "office" : data.resourceType === "user" ? "user" : "system",
+          title,
+          description: data.details || data.service || "System activity",
+          timestamp: timestamp.toISOString(),
+          level,
         });
       });
     } catch {}
 
-    try {
-      const latestUsersQ = query(usersCol, orderBy("createdAt", "desc"), limit(5));
-      const latestUsers = await getDocs(latestUsersQ);
-      latestUsers.forEach((d) => {
-        const data: any = d.data();
-        recent?.push({
-          id: `user-${d.id}`,
-          type: "user",
-          title: "New user added",
-          description: data.name || data.email || "User",
-          timestamp: (new Date(data.createdAt) || new Date()).toISOString(),
-          level: "info",
+    // Fallback: Add basic system events if no activity logs
+    if (recent?.length === 0) {
+      try {
+        const latestOfficesQ = query(officesCol, orderBy("createdAt", "desc"), limit(3));
+        const latestOffices = await getDocs(latestOfficesQ);
+        latestOffices.forEach((d) => {
+          const data: any = d.data();
+          recent?.push({
+            id: `office-${d.id}`,
+            type: "office",
+            title: "New office registered",
+            description: data.name || "Office",
+            timestamp: (data.createdAt?.toDate?.() || new Date()).toISOString(),
+            level: "success",
+          });
         });
-      });
-    } catch {}
+      } catch {}
+
+      try {
+        const latestUsersQ = query(usersCol, orderBy("createdAt", "desc"), limit(3));
+        const latestUsers = await getDocs(latestUsersQ);
+        latestUsers.forEach((d) => {
+          const data: any = d.data();
+          recent?.push({
+            id: `user-${d.id}`,
+            type: "user",
+            title: "New user added",
+            description: data.name || data.email || "User",
+            timestamp: (new Date(data.createdAt) || new Date()).toISOString(),
+            level: "info",
+          });
+        });
+      } catch {}
+    }
 
     recent?.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     const recentActivity = (recent || []).slice(0, 8);
@@ -176,7 +236,7 @@ export interface ReportsData {
   weeklyTrends: Array<{ day: string; tickets: number; avgWait: number | null }>;
 }
 
-export async function getReportsData(range: "24h" | "7d" | "30d" | "90d" = "7d"): Promise<{ success: boolean; data?: ReportsData; message?: string }> {
+export async function getReportsData(range: "24h" | "7d" | "30d" | "90d" = "7d", reportType: "overview" | "performance" | "satisfaction" | "usage" = "overview"): Promise<{ success: boolean; data?: ReportsData; message?: string }> {
   try {
     const officesCol = collection(db, "offices");
     const servicesCol = collection(db, "office_services");

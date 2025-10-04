@@ -12,6 +12,7 @@ import {
 } from "firebase/auth";
 import { doc, setDoc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { deleteDoc } from "firebase/firestore";
+import { logUserAction } from "./activity-log";
 
 export interface SignUpData {
   name: string;
@@ -323,10 +324,38 @@ export async function updateUserData(uid: string, updates: Partial<UserData>): P
 }
 
 // Deactivate user account
-export async function deactivateUser(uid: string): Promise<{ success: boolean; message: string }> {
+export async function deactivateUser(uid: string, adminUserId?: string): Promise<{ success: boolean; message: string }> {
   try {
+    // Get user data before deactivation for logging
+    let userName = uid;
+    if (adminUserId) {
+      try {
+        const userRef = doc(db, "users", uid);
+        const userDoc = await getDoc(userRef);
+        if (userDoc.exists()) {
+          const data = userDoc.data() as any;
+          userName = data.name || data.email || uid;
+        }
+      } catch (e) {
+        // Continue with deactivation even if we can't get the name
+      }
+    }
+
     const userRef = doc(db, "users", uid);
     await setDoc(userRef, { isActive: false }, { merge: true });
+
+    // Log activity
+    if (adminUserId) {
+      await logUserAction(
+        adminUserId,
+        `Deactivated user: ${userName}`,
+        "User Management",
+        "update",
+        `User: ${userName} (ID: ${uid}) - Account deactivated`,
+        "user",
+        uid
+      );
+    }
     
     return {
       success: true,
@@ -341,10 +370,39 @@ export async function deactivateUser(uid: string): Promise<{ success: boolean; m
 }
 
 // Permanently delete user document from Firestore (does not remove Firebase Auth user)
-export async function hardDeleteUser(uid: string): Promise<{ success: boolean; message: string }> {
+export async function hardDeleteUser(uid: string, adminUserId?: string): Promise<{ success: boolean; message: string }> {
   try {
+    // Get user data before deletion for logging
+    let userName = uid;
+    if (adminUserId) {
+      try {
+        const userRef = doc(db, "users", uid);
+        const userDoc = await getDoc(userRef);
+        if (userDoc.exists()) {
+          const data = userDoc.data() as any;
+          userName = data.name || data.email || uid;
+        }
+      } catch (e) {
+        // Continue with deletion even if we can't get the name
+      }
+    }
+
     const userRef = doc(db, "users", uid);
     await deleteDoc(userRef);
+
+    // Log activity
+    if (adminUserId) {
+      await logUserAction(
+        adminUserId,
+        `Deleted user: ${userName}`,
+        "User Management",
+        "delete",
+        `User: ${userName} (ID: ${uid}) - Permanently deleted`,
+        "user",
+        uid
+      );
+    }
+
     return { success: true, message: "User deleted permanently." };
   } catch (error: any) {
     return { success: false, message: "An error occurred while deleting user." };

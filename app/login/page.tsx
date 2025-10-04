@@ -49,6 +49,8 @@ const getRedirectPath = (role: string) => {
 export default function LoginPage() {
 	const [showPassword, setShowPassword] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
+	const [maintenanceMode, setMaintenanceMode] = useState(false);
+	const [systemSettings, setSystemSettings] = useState<any>(null);
 	const router = useRouter();
 	const { toast } = useToast();
 
@@ -80,9 +82,25 @@ export default function LoginPage() {
 		},
 	});
 
-	// Check for existing lockout on component mount
+	// Check for existing lockout and maintenance mode on component mount
 	useEffect(() => {
 		setMounted(true);
+
+		// Check maintenance mode
+		const checkMaintenanceMode = async () => {
+			try {
+				const res = await fetch("/api/admin/settings", { cache: "no-store" });
+				const json = await res.json();
+				if (json?.success && json.data) {
+					setSystemSettings(json.data);
+					setMaintenanceMode(json.data.maintenanceMode);
+				}
+			} catch (e) {
+				// Error handled by UI state
+			}
+		};
+
+		checkMaintenanceMode();
 
 		if (typeof window !== "undefined") {
 			const storedAttempts = localStorage.getItem("login_attempts");
@@ -338,6 +356,48 @@ export default function LoginPage() {
 								<div className="h-9 w-full rounded-md bg-muted animate-pulse" />
 							</div>
 						)}
+					</CardContent>
+				</Card>
+			</div>
+		);
+	}
+
+	// Show maintenance mode if enabled
+	if (maintenanceMode) {
+		return (
+			<div
+				className="min-h-screen bg-background flex items-center justify-center p-4"
+				suppressHydrationWarning
+			>
+				<Card className="w-full max-w-md">
+					<CardHeader className="text-center">
+						<div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+							<AlertTriangle className="w-8 h-8 text-yellow-600" />
+						</div>
+						<CardTitle className="text-2xl text-yellow-600">
+							System Under Maintenance
+						</CardTitle>
+						<CardDescription>
+							{systemSettings?.systemName || "E-QUEUE"} is currently undergoing maintenance
+						</CardDescription>
+					</CardHeader>
+					<CardContent className="space-y-4">
+						<div className="text-center space-y-2">
+							<p className="text-sm text-muted-foreground">
+								We're working to improve your experience. Please check back later.
+							</p>
+							<p className="text-xs text-muted-foreground">
+								{systemSettings?.systemDescription || "Queue Management System"}
+							</p>
+						</div>
+						<div className="text-center">
+							<Button
+								onClick={() => window.location.reload()}
+								variant="outline"
+							>
+								Refresh Page
+							</Button>
+						</div>
 					</CardContent>
 				</Card>
 			</div>

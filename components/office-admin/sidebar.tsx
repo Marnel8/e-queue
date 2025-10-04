@@ -55,19 +55,17 @@ interface SidebarProps {
 	collapsed: boolean;
 	onToggle: () => void;
 	mobile?: boolean;
+	onSignOut: () => void;
 }
 
 export function OfficeAdminSidebar({
 	collapsed,
 	onToggle,
 	mobile = false,
+	onSignOut,
 }: SidebarProps) {
 	const pathname = usePathname();
-	const { user, userData, signOut } = useAuth();
-
-	const handleSignOut = async () => {
-		await signOut();
-	};
+	const { user, userData } = useAuth();
 
 	return (
 		<div
@@ -164,7 +162,7 @@ export function OfficeAdminSidebar({
 				<Button
 					variant="ghost"
 					size="sm"
-					onClick={handleSignOut}
+					onClick={onSignOut}
 					className={cn(
 						"w-full justify-start text-gray-600 hover:text-[#071952] hover:bg-gray-100",
 						collapsed && "justify-center px-2"

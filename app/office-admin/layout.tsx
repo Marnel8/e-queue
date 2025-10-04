@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { OfficeAdminSidebar } from "@/components/office-admin/sidebar"
 import { Menu, Search, Bell } from "lucide-react"
 import { useSearchParams } from "next/navigation"
-import { AuthProvider } from "@/contexts/auth-context"
+import { AuthProvider, useAuth } from "@/contexts/auth-context"
 
 function OfficeAdminLayoutContent({
   children,
@@ -18,14 +19,25 @@ function OfficeAdminLayoutContent({
 }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [showSignOutDialog, setShowSignOutDialog] = useState(false)
   const searchParams = useSearchParams()
+  const { signOut } = useAuth()
+
+  const handleSignOut = async () => {
+    setShowSignOutDialog(false)
+    await signOut()
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Desktop Sidebar */}
       <div className="hidden lg:block">
         <Suspense fallback={<div>Loading...</div>}>
-          <OfficeAdminSidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
+          <OfficeAdminSidebar 
+            collapsed={sidebarCollapsed} 
+            onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+            onSignOut={() => setShowSignOutDialog(true)}
+          />
         </Suspense>
       </div>
 
@@ -35,7 +47,12 @@ function OfficeAdminLayoutContent({
           <div className="fixed inset-0 bg-black/50" onClick={() => setMobileMenuOpen(false)} />
           <div className="fixed left-0 top-0 h-full w-64 bg-white">
             <Suspense fallback={<div>Loading...</div>}>
-              <OfficeAdminSidebar collapsed={false} onToggle={() => setMobileMenuOpen(false)} mobile />
+              <OfficeAdminSidebar 
+                collapsed={false} 
+                onToggle={() => setMobileMenuOpen(false)} 
+                mobile 
+                onSignOut={() => setShowSignOutDialog(true)}
+              />
             </Suspense>
           </div>
         </div>
@@ -69,6 +86,24 @@ function OfficeAdminLayoutContent({
           <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
         </div>
       </main>
+
+      {/* Sign Out Confirmation Dialog */}
+      <AlertDialog open={showSignOutDialog} onOpenChange={setShowSignOutDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Sign Out</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to sign out? You will need to log in again to access the office admin panel.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleSignOut} className="bg-red-600 hover:bg-red-700">
+              Sign Out
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
